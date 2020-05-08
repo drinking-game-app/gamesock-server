@@ -3,12 +3,14 @@
   "version": "0.0.1",
   "description": "A Serverside Networking library to handle the websocket portion of games",
   "main": "dist/server.js",
+  "types": "./dist/server.d.ts",
   "scripts": {
     "test": "jest --config jestconfig.json",
     "build": "tsc",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
     "preversion": "npm run lint",
+    "declaration:build": "tsc -p declaration.tsconfig.json",
     "lint": "tslint -p tsconfig.json"
   },
   "author": "Ross MacDonald & Ultan O Nuaillain",
