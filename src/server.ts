@@ -1,11 +1,12 @@
 import http from 'http';
+import { Server, Socket } from 'socket.io';
 import socketIO from 'socket.io';
 import { Application } from "express";
 import lobbies from './lobbies'
 
 
 
-
+let io:Server;
 /**
  *  This Main constructor converts the instance of express into a HTTP server with all the websocket
  *  functions, events and emitters
@@ -18,13 +19,19 @@ const sockServer = (app: Application) => {
   // Create the http server from the express application passed in
   const server = new http.Server(app);
   // Initialize Socket IO server
-  const io = socketIO(server);
+  io = socketIO(server);
   // Initialize the connection handler
   lobbies.connectionHandler(io);
   return server;
 };
 
+/**
+ * Close socketIO server
+ */
+const close =()=>{io.close()}
+
 export default{
   sockServer,
-  lobbies
+  lobbies,
+  close
 }

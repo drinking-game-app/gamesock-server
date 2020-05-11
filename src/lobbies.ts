@@ -25,7 +25,10 @@ const onAuth = (authenticateFn: (authToken: string) => boolean) => {
 
 const joinLobby = (socket: Socket, room: string, io: Server) => {
   socket.join(room);
-  io.to(room).emit('message', `${socket.id} has just joined ${room}`);
+  io.to(room).emit('message', {
+    ok:true,
+    msg:`${socket.id} has just joined ${room}`
+  });
 };
 
 const connectionHandler = (io: Server) => {
@@ -37,7 +40,6 @@ const connectionHandler = (io: Server) => {
     });
 
     socket.on('createLobby', (roomName: string, authToken: string) => {
-      console.log('Created');
       // The authorization function is overwritten by the users of the library
       if (authorize(authToken)) {
         const lobby = {
@@ -48,7 +50,10 @@ const connectionHandler = (io: Server) => {
         lobbies[lobby.id] = lobby;
         joinLobby(socket, roomName, io);
       } else {
-        socket.emit('message', `${socket.id} is not authroized to create rooms`);
+        socket.emit('message', {
+          ok:false,
+          msg:`${socket.id} is not authorized to create rooms`
+        });
       }
       //   callback();
     });
