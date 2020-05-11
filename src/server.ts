@@ -1,8 +1,7 @@
 import http from 'http';
 import socketIO from 'socket.io';
 import { Application } from "express";
-import connectionHandler from './lobbies';
-
+import lobbies from './lobbies'
 
 
 
@@ -15,12 +14,17 @@ import connectionHandler from './lobbies';
  *  @param app The instance of express
  *  @returns A http server
  */
-export default (app: Application) => {
+const sockServer = (app: Application) => {
   // Create the http server from the express application passed in
-  const sockServer = new http.Server(app);
+  const server = new http.Server(app);
   // Initialize Socket IO server
-  const io = socketIO(sockServer);
+  const io = socketIO(server);
   // Initialize the connection handler
-  connectionHandler(io);
-  return sockServer;
+  lobbies.connectionHandler(io);
+  return server;
 };
+
+export default{
+  sockServer,
+  lobbies
+}

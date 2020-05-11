@@ -6,7 +6,7 @@
   "types": "./dist/server.d.ts",
   "scripts": {
     "test": "jest --config jestconfig.json",
-    "build": "tsc",
+    "build": "tsc && npm run declaration:build",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
     "preversion": "npm run lint",
