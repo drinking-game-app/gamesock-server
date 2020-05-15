@@ -23,4 +23,4 @@ In the folder for this dependency run:
 
 In the folder of the project you would like to use it in
 
-`npm link '@rossmacd/gamesock-server'`
+`npm link @rossmacd/gamesock-server`

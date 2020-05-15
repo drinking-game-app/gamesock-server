@@ -13,7 +13,7 @@ let server:http.Server;
 beforeAll((done) => {
   const app: Application = express();
   // Start gamesock server
-  server = gamesock.sockServer(app);
+  server = gamesock.sockServer(app,false);
   server.listen(8000, () => {
     console.info('Server started on port %s.', 8000)
   })
@@ -66,7 +66,7 @@ describe('onAuth', () => {
 
   test('Function returns false', (done) => {
     // override auth function
-    gamesock.lobbies.onAuth((token: string) => {
+    gamesock.onAuth((token: string) => {
       return false;
     });
     clientSocket.emit('createLobby', 'test');
