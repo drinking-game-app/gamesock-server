@@ -77,3 +77,14 @@ describe('onAuth', () => {
   });
 });
 
+describe('onLobbyCreate', () => {
+  test('Default Function', (done) => {
+    clientSocket.emit('createLobby', 'test');
+    clientSocket.once('message', (msgData: Message) => {
+      expect(msgData.ok).toBe(true);
+      done();
+    });
+  });
+
+});
+

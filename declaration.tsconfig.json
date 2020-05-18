@@ -1,11 +1,12 @@
 {
     "extends": "./tsconfig",
     "exclude": [
-      "__tests__/**/*"
+      "src/__tests__"
     ],
     "compilerOptions": {
       "declaration": true,
       "noEmit": false,
-      "emitDeclarationOnly": true
+      "emitDeclarationOnly": true,
+      "declarationMap": true
     }
   }

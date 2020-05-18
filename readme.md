@@ -5,7 +5,7 @@ A Server-side Networking library to handle the websocket portion of drinking gam
 ## To install - (For Development):
 Clone the package using
 
-`git clone`
+`git clone https://github.com/drinking-game-app/gamesock-server.git`
 
 Install Peer dependencies
 

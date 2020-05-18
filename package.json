@@ -6,12 +6,13 @@
   "types": "./dist/server.d.ts",
   "scripts": {
     "test": "jest --silent --detectOpenHandles",
-    "build": "tsc && npm run declaration:build",
+    "build": "tsc -p declaration.tsconfig.json",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
     "preversion": "npm run lint",
-    "declaration:build": "tsc -p declaration.tsconfig.json",
-    "lint": "tslint -p tsconfig.json"
+    "lint": "tslint -p tsconfig.json",
+    "docBuild": "typedoc --mode file --excludePrivate --excludeNotExported --out docs/ src/server.ts",
+    "doc:html": "typedoc src/ --exclude **/*.test.ts --target ES6 --excludePrivate --excludeNotExported --mode file --out /docs"
   },
   "author": "Ross MacDonald & Ultan O Nuaillain",
   "license": "ISC",
@@ -30,6 +31,7 @@
     "socket.io-client": "^2.3.0",
     "ts-jest": "^25.5.0",
     "tslint": "^6.1.2",
+    "typedoc": "^0.17.6",
     "typescript": "^3.8.3"
   },
   "dependencies": {

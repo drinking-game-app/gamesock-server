@@ -4,7 +4,7 @@ import fs from 'fs';
 import { Server, Socket } from 'socket.io';
 import socketIO from 'socket.io';
 import { Application } from "express";
-import {connectionHandler, onAuth} from './lobbies'
+import { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin } from './lobbies'
 
 
 
@@ -38,7 +38,7 @@ const sockServer = (app: Application, httpsOn:boolean) => {
 };
 
 /**
- *  Close socketIO server - Http server will stay on
+ *  Close socketIO server - Http server will stay on - probably only useful for testing
  *
  */
 const close =()=>{io.close()}
@@ -46,5 +46,9 @@ const close =()=>{io.close()}
 export default{
   sockServer,
   onAuth,
+  onLobbyCreate,
+  onLobbyJoin,
   close
 }
+
+export { sockServer,close,onAuth,onLobbyCreate, onLobbyJoin}
