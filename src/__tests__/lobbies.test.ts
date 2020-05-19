@@ -123,3 +123,17 @@ describe('onLobbyJoin', () => {
     });
   });
 })
+
+describe('onPlayerReady', () => {
+  test('onReadyInRoom', (done) => {
+    const readyLobby='test';
+    clientSocket.emit('joinLobby',readyLobby)
+    clientSocket.emit('playerReady', readyLobby);
+    clientSocket.once('message',(msg1:Message)=>{
+      clientSocket.once('message', (msgData: Message) => {
+        expect(msgData.msg).toBe(`${clientSocket.id} in ${readyLobby} is now ready `);
+        done();
+      })
+    ;})
+  });
+})

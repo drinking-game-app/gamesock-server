@@ -87,6 +87,14 @@ export const connectionHandler = (io: Server) => {
         returnError(`${socket.id} is not authorized to create rooms`, socket);
       }
     });
+
+    // Needs more logic
+    socket.on("playerReady",(lobbyName: string)=>{
+      io.to(lobbyName).emit('message', {
+        ok: true,
+        msg: `${socket.id} in ${lobbyName} is now ready `,
+      });
+    })
   });
 };
 
