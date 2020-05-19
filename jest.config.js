@@ -14,5 +14,8 @@ module.exports = {
     "jsx",
     "json"
   ],
+  "coverageReporters": [
+    "json-summary"
+  ],
   verbose: true,
 };

@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "types": "./dist/server.d.ts",
   "scripts": {
-    "test": "jest --detectOpenHandles --runInBand --coverage",
+    "test": "jest --detectOpenHandles --runInBand --coverage && make-coverage-badge",
     "build": "tsc -p declaration.tsconfig.json",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
@@ -27,6 +27,7 @@
     "@types/socket.io-client": "^1.4.32",
     "express": "^4.17.1",
     "jest": "^26.0.1",
+    "make-coverage-badge": "^1.2.0",
     "nodemon": "^2.0.3",
     "socket.io-client": "^2.3.0",
     "ts-jest": "^25.5.0",

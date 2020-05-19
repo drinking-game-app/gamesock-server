@@ -1,0 +1,4 @@
+{"total": {"lines":{"total":43,"covered":42,"skipped":0,"pct":97.67},"statements":{"total":51,"covered":50,"skipped":0,"pct":98.04},"functions":{"total":14,"covered":14,"skipped":0,"pct":100},"branches":{"total":4,"covered":3,"skipped":0,"pct":75}}
+,"C:\\Users\\rossm\\Drink\\gamesock-server\\src\\lobbies.ts": {"lines":{"total":28,"covered":28,"skipped":0,"pct":100},"functions":{"total":12,"covered":12,"skipped":0,"pct":100},"statements":{"total":31,"covered":31,"skipped":0,"pct":100},"branches":{"total":2,"covered":2,"skipped":0,"pct":100}}
+,"C:\\Users\\rossm\\Drink\\gamesock-server\\src\\server.ts": {"lines":{"total":15,"covered":14,"skipped":0,"pct":93.33},"functions":{"total":2,"covered":2,"skipped":0,"pct":100},"statements":{"total":20,"covered":19,"skipped":0,"pct":95},"branches":{"total":2,"covered":1,"skipped":0,"pct":50}}
+}
