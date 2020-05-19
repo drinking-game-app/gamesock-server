@@ -1,11 +1,13 @@
 import express, { Application, Request, Response } from 'express';
-import gamesock from '../server';
+import {sockServer,close,onAuth,onLobbyCreate,onLobbyJoin} from '../server';
 // JavaScript socket.io code
 import ioClient from 'socket.io-client';
 import http from 'http';
+import lobbies, { Lobby } from '../lobbies';
 let clientSocket: SocketIOClient.Socket;
 
 let server:http.Server;
+let myLobbies:Lobby[]=[];
 
 /**
  * Setup WS & HTTP servers
@@ -13,19 +15,20 @@ let server:http.Server;
 beforeAll((done) => {
   const app: Application = express();
   // Start gamesock server
-  server = gamesock.sockServer(app,false);
+  server = sockServer(app,false);
   server.listen(8000, () => {
     console.info('Server started on port %s.', 8000)
   })
   .on("error", (err: any) => {
     console.error("Server Error: ", err)
   })
+  myLobbies=[]
   done();
 });
 
 afterAll((done) => {
   server.close();
-  gamesock.close();
+  close();
   done();
 });
 
@@ -44,9 +47,7 @@ beforeEach((done) => {
  */
 afterEach((done) => {
   // Cleanup
-  if (clientSocket.connected) {
-    clientSocket.disconnect();
-  }
+    clientSocket.close();
   done();
 });
 
@@ -66,7 +67,7 @@ describe('onAuth', () => {
 
   test('Function returns false', (done) => {
     // override auth function
-    gamesock.onAuth((token: string) => {
+    onAuth((token: string) => {
       return false;
     });
     clientSocket.emit('createLobby', 'test');
@@ -78,13 +79,47 @@ describe('onAuth', () => {
 });
 
 describe('onLobbyCreate', () => {
-  test('Default Function', (done) => {
+  test('OnCreate', (done) => {
+    onAuth((token: string) => {
+      return true;
+    });
+    // Push lobby into local array
+    onLobbyCreate((newLobby)=>{
+      myLobbies.push(newLobby);
+      return true
+    })
+  // Push player into their lobby
+  onLobbyJoin((lobbyName, player)=>{
+    const plIndex = myLobbies.findIndex(lobby=>lobby.name===lobbyName);
+    myLobbies[plIndex].players.push(player);
+    return true
+  })
     clientSocket.emit('createLobby', 'test');
     clientSocket.once('message', (msgData: Message) => {
-      expect(msgData.ok).toBe(true);
+      expect(myLobbies[0]).toStrictEqual({
+          name: "test",
+          round: 0,
+          players: [{
+            id: clientSocket.id,
+            name: 'Guest',
+            ready: false,
+          }],
+        });
       done();
     });
   });
-
 });
 
+describe('onLobbyJoin', () => {
+  test('OnJoin', (done) => {
+    clientSocket.emit('joinLobby', 'test');
+    clientSocket.once('message', (msgData: Message) => {
+      expect(myLobbies[0].players[1]).toStrictEqual({
+          id: clientSocket.id,
+          name: 'Guest',
+          ready: false,
+        });
+      done();
+    });
+  });
+})

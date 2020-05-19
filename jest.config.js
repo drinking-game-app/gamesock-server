@@ -1,7 +1,7 @@
 const {defaults} = require('jest-config');
 
 module.exports = {
-  bail: true,
+  bail: false,
   moduleFileExtensions: [...defaults.moduleFileExtensions, 'ts', 'tsx'],
   roots: ['src'],
   "transform": {

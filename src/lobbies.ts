@@ -27,7 +27,7 @@ export type LobbyJoinFn = (lobbyName: string, player: Player) => boolean;
 */
 // Set Authorize function defaults to true
 let authorizeFn: AuthFn = (authToken) => true;
-let onLobbyCreateFn: LobbyCreateFn = (lobbyName) => true;
+let onLobbyCreateFn: LobbyCreateFn = (lobby) => true;
 let onLobbyJoinFn: LobbyJoinFn = (lobbyName, player) => true;
 
 /**
@@ -82,6 +82,7 @@ export const connectionHandler = (io: Server) => {
         // Join the created Lobby
         joinLobby(lobbyName, socket, io);
       } else {
+        console.log("Unauthorized")
         // Return an error to the player when not authorized
         returnError(`${socket.id} is not authorized to create rooms`, socket);
       }
