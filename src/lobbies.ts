@@ -99,11 +99,11 @@ export const connectionHandler = (io: Server) => {
       const playerNum = onPlayerReadyFn(lobbyName,socket.id);
       io.to(lobbyName).emit('message', {
         ok: true,
-        msg: `${socket.id} in ${lobbyName} is now ready `,
+        msg: `${socket.id} in ${lobbyName} is now ready`,
       });
-      // Catch errors when onPLayerReady is not implemented
+      // Catch errors when onPlayerReady is not implemented
       playerNum===-1?
-      console.error("Error: 🤯 Please implement the onPLayerReadyFunction"):
+      console.error("Error: 🤯 Please implement the onPlayerReadyFunction"):
       io.to(lobbyName).emit('playerReady', playerNum);
     })
   });

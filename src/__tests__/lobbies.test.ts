@@ -140,18 +140,21 @@ describe('playerReadyEmit', () => {
 
 describe('startGame', () => {
   test('startGameEmit', (done) => {
-    onPlayerReady((lobby)=>{
-
-      return true
+    onPlayerReady((lobbyName:string, playerId:string)=>{
+      return 0
     })
     const readyLobby='test';
     clientSocket.emit('joinLobby',readyLobby)
     clientSocket.emit('playerReady', readyLobby);
-    clientSocket.once('message',(msg1:Message)=>{
-      clientSocket.once('message', (msgData: Message) => {
-        expect(msgData.msg).toBe(`${clientSocket.id} in ${readyLobby} is now ready`);
-        done();
-      })
-    ;})
+    // clientSocket.once('message',(msg1:Message)=>{
+    //   clientSocket.once('message', (msgData: Message) => {
+    //     expect(msgData.msg).toBe(`${clientSocket.id} in ${readyLobby} is now ready`);
+    //     done();
+    //   })
+    // ;})
+    clientSocket.once('playerReady',(playerNum:number)=>{
+      expect(playerNum).toBe(0);
+      done();
+    })
   });
 })
