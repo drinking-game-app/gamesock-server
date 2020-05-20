@@ -1,4 +1,5 @@
 import { Server, Socket } from 'socket.io';
+import { gameFunctions } from './game';
 
 /**
  * The lobby object
@@ -21,6 +22,7 @@ export interface Player {
 export type AuthFn = (authToken: string) => boolean;
 export type LobbyCreateFn = (lobby: Lobby) => boolean;
 export type LobbyJoinFn = (lobbyName: string, player: Player) => boolean;
+export type PlayerReadyFn = (lobbyName: string,playerId:string) => number;
 
 /*
 ----- The over-writable functions
@@ -29,6 +31,7 @@ export type LobbyJoinFn = (lobbyName: string, player: Player) => boolean;
 let authorizeFn: AuthFn = (authToken) => true;
 let onLobbyCreateFn: LobbyCreateFn = (lobby) => true;
 let onLobbyJoinFn: LobbyJoinFn = (lobbyName, player) => true;
+let onPlayerReadyFn: PlayerReadyFn = (lobbyName,playerId) =>-1;
 
 /**
  * Takes in a function to verify the authToken passed to the server. This function will run before a lobby is created
@@ -52,6 +55,10 @@ export const onLobbyCreate = (createFunction: LobbyCreateFn) => {
  */
 export const onLobbyJoin = (joinFunction: LobbyJoinFn) => {
   onLobbyJoinFn = joinFunction;
+};
+
+export const onPlayerReady = (readyFunction: PlayerReadyFn) => {
+  onPlayerReadyFn = readyFunction;
 };
 
 /**
@@ -88,12 +95,16 @@ export const connectionHandler = (io: Server) => {
       }
     });
 
-    // Needs more logic
     socket.on("playerReady",(lobbyName: string)=>{
+      const playerNum = onPlayerReadyFn(lobbyName,socket.id);
       io.to(lobbyName).emit('message', {
         ok: true,
         msg: `${socket.id} in ${lobbyName} is now ready `,
       });
+      // Catch errors when onPLayerReady is not implemented
+      playerNum===-1?
+      console.error("Error: 🤯 Please implement the onPLayerReadyFunction"):
+      io.to(lobbyName).emit('playerReady', playerNum);
     })
   });
 };
@@ -115,8 +126,7 @@ const joinLobby = (lobbyName: string, socket: Socket, io: Server) => {
   };
   // Run server code for joining a lobby
   // @HOOK
-  onLobbyJoinFn(lobbyName, player);
-
+ if( onLobbyJoinFn(lobbyName, player)){
   // Join the Lobby
   socket.join(lobbyName);
   // Announce player has joined
@@ -124,6 +134,9 @@ const joinLobby = (lobbyName: string, socket: Socket, io: Server) => {
     ok: true,
     msg: `${socket.id} has just joined ${lobbyName}`,
   });
+}else{
+    returnError(`${lobbyName} does not exist 😕, check the lobby and try again!`, socket);
+  }
 };
 
 const returnError = (message: string, socket: Socket) => {
@@ -133,4 +146,4 @@ const returnError = (message: string, socket: Socket) => {
   });
 };
 
-export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin };
+export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onPlayerReady };

@@ -3,7 +3,7 @@ import {sockServer,close,onAuth,onLobbyCreate,onLobbyJoin} from '../server';
 // JavaScript socket.io code
 import ioClient from 'socket.io-client';
 import http from 'http';
-import lobbies, { Lobby } from '../lobbies';
+import lobbies, { Lobby, onPlayerReady } from '../lobbies';
 let clientSocket: SocketIOClient.Socket;
 
 let server:http.Server;
@@ -124,14 +124,32 @@ describe('onLobbyJoin', () => {
   });
 })
 
-describe('onPlayerReady', () => {
-  test('onReadyInRoom', (done) => {
+describe('playerReadyEmit', () => {
+  test('playerReadyEmit', (done) => {
     const readyLobby='test';
     clientSocket.emit('joinLobby',readyLobby)
     clientSocket.emit('playerReady', readyLobby);
     clientSocket.once('message',(msg1:Message)=>{
       clientSocket.once('message', (msgData: Message) => {
-        expect(msgData.msg).toBe(`${clientSocket.id} in ${readyLobby} is now ready `);
+        expect(msgData.msg).toBe(`${clientSocket.id} in ${readyLobby} is now ready`);
+        done();
+      })
+    ;})
+  });
+})
+
+describe('startGame', () => {
+  test('startGameEmit', (done) => {
+    onPlayerReady((lobby)=>{
+
+      return true
+    })
+    const readyLobby='test';
+    clientSocket.emit('joinLobby',readyLobby)
+    clientSocket.emit('playerReady', readyLobby);
+    clientSocket.once('message',(msg1:Message)=>{
+      clientSocket.once('message', (msgData: Message) => {
+        expect(msgData.msg).toBe(`${clientSocket.id} in ${readyLobby} is now ready`);
         done();
       })
     ;})

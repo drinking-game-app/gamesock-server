@@ -4,9 +4,7 @@ import fs from 'fs';
 import { Server, Socket } from 'socket.io';
 import socketIO from 'socket.io';
 import { Application } from "express";
-import { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin } from './lobbies'
-
-
+import { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onPlayerReady } from './lobbies'
 
 let io:Server;
 
@@ -43,12 +41,39 @@ const sockServer = (app: Application, httpsOn:boolean) => {
  */
 const close =()=>{io.close()}
 
+/**
+ * Tells the players to start  the game
+ * @param lobbyName The lobby to start
+ */
+const startGame=(lobbyName:string)=>{
+  const gameSettings={
+    rounds:10,
+  }
+  io.to(lobbyName).emit('startGame');
+}
+
+const startRound=(lobbyName:string,roundNum:number)=>{
+  io.to(lobbyName).emit('startRound', roundNum);
+}
+
 export default{
   sockServer,
+  close,
   onAuth,
   onLobbyCreate,
   onLobbyJoin,
-  close
+  onPlayerReady,
+  startGame,
+  startRound
 }
 
-export { sockServer,close,onAuth,onLobbyCreate, onLobbyJoin}
+export {
+  sockServer,
+  close,
+  onAuth,
+  onLobbyCreate,
+  onLobbyJoin,
+  onPlayerReady,
+  startGame,
+  startRound
+}
