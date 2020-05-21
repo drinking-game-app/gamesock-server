@@ -5,7 +5,7 @@ import { Server, Socket } from 'socket.io';
 import socketIO from 'socket.io';
 import { Application } from "express";
 import { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onPlayerReady } from './lobbies'
-
+import {Lobby, Player} from './lobbies'
 let io:Server;
 
 /**
@@ -75,5 +75,7 @@ export {
   onLobbyJoin,
   onPlayerReady,
   startGame,
-  startRound
+  startRound,
+  Lobby, 
+  Player
 }
