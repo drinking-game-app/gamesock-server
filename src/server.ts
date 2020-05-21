@@ -13,8 +13,8 @@ let io:Server;
  *  functions, events and emitters
  *  You can then listen to this server as normal
  *
- *  @param app The instance of express
- *  @returns A http server
+ *  @param {Application} app The instance of express
+ *  @returns {https.Server} A http server
  */
 const sockServer = (app: Application, httpsOn:boolean) => {
   let server;
@@ -43,7 +43,7 @@ const close =()=>{io.close()}
 
 /**
  * Tells the players to start  the game
- * @param lobbyName The lobby to start
+ * @param {string} lobbyName The lobby to start
  */
 const startGame=(lobbyName:string)=>{
   const gameSettings={
@@ -76,6 +76,6 @@ export {
   onPlayerReady,
   startGame,
   startRound,
-  Lobby, 
+  Lobby,
   Player
 }

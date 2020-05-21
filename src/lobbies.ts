@@ -21,8 +21,9 @@ export interface Player {
 
 export type AuthFn = (authToken: string) => boolean;
 export type LobbyCreateFn = (lobby: Lobby) => boolean;
-export type LobbyJoinFn = (lobbyName: string, player: Player) => boolean;
-export type PlayerReadyFn = (lobbyName: string,playerId:string) => number;
+export type LobbyJoinFn = (lobbyName: string, player: Player) => Player[];
+export type PlayerReadyFn = (lobbyName: string, playerId: string) => number;
+export type CallbackFunction = (data: any, error?: string) => void;
 
 /*
 ----- The over-writable functions
@@ -30,20 +31,20 @@ export type PlayerReadyFn = (lobbyName: string,playerId:string) => number;
 // Set Authorize function defaults to true
 let authorizeFn: AuthFn = (authToken) => true;
 let onLobbyCreateFn: LobbyCreateFn = (lobby) => true;
-let onLobbyJoinFn: LobbyJoinFn = (lobbyName, player) => true;
-let onPlayerReadyFn: PlayerReadyFn = (lobbyName,playerId) =>-1;
+let onLobbyJoinFn: LobbyJoinFn = (lobbyName, player) => [];
+let onPlayerReadyFn: PlayerReadyFn = (lobbyName, playerId) => -1;
 
 /**
  * Takes in a function to verify the authToken passed to the server. This function will run before a lobby is created
- * @param authenticateFn The function which will verify the token that is passed to the server
+ * @param {AuthFn} authenticateFn The function which will verify the token that is passed to the server
  */
-export const onAuth = (authCheckFunction:AuthFn) => {
+export const onAuth = (authCheckFunction: AuthFn) => {
   authorizeFn = authCheckFunction;
 };
 
 /**
  * Takes in a function to run when a lobby is created
- * @param createFunction This function will run when a lobby is created. The lobby can be accessed from this function
+ * @param {LobbyCreateFn} createFunction The lobby can be accessed from this function, returns a boolean to allow lobby creation or not
  */
 export const onLobbyCreate = (createFunction: LobbyCreateFn) => {
   onLobbyCreateFn = createFunction;
@@ -51,12 +52,17 @@ export const onLobbyCreate = (createFunction: LobbyCreateFn) => {
 
 /**
  * Takes in a function to run when a lobby is joined by a player
- * @param joinFunction This function will run when a lobby is joined. The lobby name and joined player can be accessed from this function
+ * @param {LobbyJoinFn} joinFunction The lobby name and joined player can be accessed from this function, it returns the list of players
  */
 export const onLobbyJoin = (joinFunction: LobbyJoinFn) => {
   onLobbyJoinFn = joinFunction;
 };
 
+/**
+ * Takes in a function to run when a lobby is joined by a player
+ * This function takes in the lobby name and player ID, it returns the player number
+ * @param {PlayerReadyFn} readyFunction
+ */
 export const onPlayerReady = (readyFunction: PlayerReadyFn) => {
   onPlayerReadyFn = readyFunction;
 };
@@ -65,16 +71,16 @@ export const onPlayerReady = (readyFunction: PlayerReadyFn) => {
  * @private
  * This function sets up the functionality for new connections
  *
- * @param io The SocketIo server which is being connected to
+ * @param {Server} io The SocketIo server which is being connected to
  */
 export const connectionHandler = (io: Server) => {
   // When a new client connects
   io.on('connection', (socket: Socket) => {
-    socket.on('joinLobby', (lobbyName: string) => {
-      joinLobby(lobbyName, socket, io);
+    socket.on('joinLobby', (lobbyName: string, callback: CallbackFunction) => {
+      joinLobby(lobbyName, socket, io, callback);
     });
 
-    socket.on('createLobby', (lobbyName: string, authToken: string) => {
+    socket.on('createLobby', (lobbyName: string, authToken: string, callback: CallbackFunction) => {
       // The authorization function is overwritten by the users of the library
       // @HOOK
       if (authorizeFn(authToken)) {
@@ -87,25 +93,23 @@ export const connectionHandler = (io: Server) => {
         // @HOOK
         onLobbyCreateFn(lobby);
         // Join the created Lobby
-        joinLobby(lobbyName, socket, io);
+        joinLobby(lobbyName, socket, io, callback);
       } else {
-        console.log("Unauthorized")
+        console.log('Unauthorized');
         // Return an error to the player when not authorized
         returnError(`${socket.id} is not authorized to create rooms`, socket);
       }
     });
 
-    socket.on("playerReady",(lobbyName: string)=>{
-      const playerNum = onPlayerReadyFn(lobbyName,socket.id);
+    socket.on('playerReady', (lobbyName: string) => {
+      const playerNum = onPlayerReadyFn(lobbyName, socket.id);
       io.to(lobbyName).emit('message', {
         ok: true,
         msg: `${socket.id} in ${lobbyName} is now ready`,
       });
       // Catch errors when onPlayerReady is not implemented
-      playerNum===-1?
-      console.error("Error: 🤯 Please implement the onPlayerReadyFunction"):
-      io.to(lobbyName).emit('playerReady', playerNum);
-    })
+      playerNum === -1 ? console.error('Error: 🤯 Please implement the onPlayerReadyFunction') : io.to(lobbyName).emit('playerReady', playerNum);
+    });
   });
 };
 
@@ -113,11 +117,11 @@ export const connectionHandler = (io: Server) => {
  * @private
  * Function to join a specific lobby
  *
- * @param lobbyName The string that contains the lobby name to join
- * @param socket The socket which is joining
- * @param io The IO server
+ * @param {string} lobbyName The string that contains the lobby name to join
+ * @param {Socket} socket The socket which is joining
+ * @param {Server} io The IO server
  */
-const joinLobby = (lobbyName: string, socket: Socket, io: Server) => {
+const joinLobby = (lobbyName: string, socket: Socket, io: Server, callback: CallbackFunction) => {
   // Default player passed through to server
   const player: Player = {
     id: socket.id,
@@ -126,15 +130,17 @@ const joinLobby = (lobbyName: string, socket: Socket, io: Server) => {
   };
   // Run server code for joining a lobby
   // @HOOK
- if( onLobbyJoinFn(lobbyName, player)){
-  // Join the Lobby
-  socket.join(lobbyName);
-  // Announce player has joined
-  io.to(lobbyName).emit('message', {
-    ok: true,
-    msg: `${socket.id} has just joined ${lobbyName}`,
-  });
-}else{
+  const players=onLobbyJoinFn(lobbyName, player);
+  if (players.length!==0) {
+    // Join the Lobby
+    socket.join(lobbyName);
+    // Announce player has joined
+    io.to(lobbyName).emit('message', {
+      ok: true,
+      msg: `${socket.id} has just joined ${lobbyName}`,
+    });
+    callback(players);
+  } else {
     returnError(`${lobbyName} does not exist 😕, check the lobby and try again!`, socket);
   }
 };
