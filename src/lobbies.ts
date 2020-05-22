@@ -24,6 +24,7 @@ export type LobbyCreateFn = (lobby: Lobby) => boolean;
 export type LobbyJoinFn = (lobbyName: string, player: Player) => Player[];
 export type PlayerReadyFn = (lobbyName: string, playerId: string) => number;
 export type CallbackFunction = (data: any, error?: string) => void;
+export type UpdateSinglePlayerFn = (lobbyName: string, player: Player) => (Player | null);
 
 /*
 ----- The over-writable functions
@@ -33,6 +34,7 @@ let authorizeFn: AuthFn = (authToken) => true;
 let onLobbyCreateFn: LobbyCreateFn = (lobby) => true;
 let onLobbyJoinFn: LobbyJoinFn = (lobbyName, player) => [];
 let onPlayerReadyFn: PlayerReadyFn = (lobbyName, playerId) => -1;
+let onUpdateSinglePlayerFn: UpdateSinglePlayerFn = (lobbyName, player) => null;
 
 /**
  * Takes in a function to verify the authToken passed to the server. This function will run before a lobby is created
@@ -65,6 +67,15 @@ export const onLobbyJoin = (joinFunction: LobbyJoinFn) => {
  */
 export const onPlayerReady = (readyFunction: PlayerReadyFn) => {
   onPlayerReadyFn = readyFunction;
+};
+
+/**
+ * Takes in a function to run when a single player is updated
+ * This function takes in the lobby name and player, it returns the updated player
+ * @param {UpdateSinglePlayerFn} updateSinglePlayerFunction
+ */
+export const onUpdateSinglePlayer = (updateSinglePlayerFunction: UpdateSinglePlayerFn) => {
+  onUpdateSinglePlayerFn = updateSinglePlayerFunction;
 };
 
 /**
@@ -110,6 +121,15 @@ export const connectionHandler = (io: Server) => {
       // Catch errors when onPlayerReady is not implemented
       playerNum === -1 ? console.error('Error: 🤯 Please implement the onPlayerReadyFunction') : io.to(lobbyName).emit('playerReady', playerNum);
     });
+
+  socket.on('updateSinglePlayer', (lobbyName: string, player: Player) => {
+    const playerObj = onUpdateSinglePlayerFn(lobbyName, player);
+    if(playerObj==null){
+      console.error('Error: 🤯 Please implement the onUpdateSinglePlayer');
+    } else {
+      io.to(lobbyName).emit('playerUpdated', playerObj);
+    }
+  });
   });
 };
 
@@ -152,4 +172,4 @@ const returnError = (message: string, socket: Socket) => {
   });
 };
 
-export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onPlayerReady };
+export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onPlayerReady, onUpdateSinglePlayer };
