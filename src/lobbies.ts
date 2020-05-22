@@ -122,11 +122,12 @@ export const connectionHandler = (io: Server) => {
       playerNum === -1 ? console.error('Error: 🤯 Please implement the onPlayerReadyFunction') : io.to(lobbyName).emit('playerReady', playerNum);
     });
 
-  socket.on('updateSinglePlayer', (lobbyName: string, player: Player) => {
+  socket.on('updateSelf', (lobbyName: string, player: Player) => {
     const playerObj = onUpdateSinglePlayerFn(lobbyName, player);
     if(playerObj==null){
       console.error('Error: 🤯 Please implement the onUpdateSinglePlayer');
     } else {
+      console.log('Sending updated player')
       io.to(lobbyName).emit('playerUpdated', playerObj);
     }
   });
