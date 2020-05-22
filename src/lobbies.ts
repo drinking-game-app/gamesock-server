@@ -126,6 +126,8 @@ export const connectionHandler = (io: Server) => {
     const playerObj = onUpdateSinglePlayerFn(lobbyName, player);
     if(playerObj==null){
       console.error('Error: 🤯 Please implement the onUpdateSinglePlayer');
+    }else if(socket.id!==player.id){
+      console.error(`Error: HACKER ALERT; ${socket.id} Tried  to edit ${player.id}`)
     } else {
       console.log('Sending updated player')
       io.to(lobbyName).emit('playerUpdated', playerObj);
@@ -151,7 +153,7 @@ const joinLobby = (lobbyName: string, socket: Socket, io: Server, callback: Call
   };
   // Run server code for joining a lobby
   // @HOOK
-  const players=onLobbyJoinFn(lobbyName, player);
+  const players = onLobbyJoinFn(lobbyName, player);
   if (players.length!==0) {
     // Join the Lobby
     socket.join(lobbyName);
