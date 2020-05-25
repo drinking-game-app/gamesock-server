@@ -102,9 +102,11 @@ export const connectionHandler = (io: Server) => {
         };
         // Run on lobby create function - Code for this is written on server
         // @HOOK
-        onLobbyCreateFn(lobby);
+        if(onLobbyCreateFn(lobby)){
         // Join the created Lobby
-        joinLobby(lobbyName, socket, io, callback);
+        joinLobby(lobbyName, socket, io, callback);} else{
+          returnError(`Could not create lobby`, socket);
+        }
       } else {
         console.log('Unauthorized');
         // Return an error to the player when not authorized

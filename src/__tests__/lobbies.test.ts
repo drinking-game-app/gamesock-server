@@ -3,7 +3,7 @@ import {sockServer,close,onAuth,onLobbyCreate,onLobbyJoin} from '../server';
 // JavaScript socket.io code
 import ioClient from 'socket.io-client';
 import http from 'http';
-import lobbies, { Lobby, onPlayerReady } from '../lobbies';
+import lobbies, { Lobby, onPlayerReady, Player } from '../lobbies';
 let clientSocket: SocketIOClient.Socket;
 
 let server:http.Server;
@@ -58,11 +58,28 @@ export interface Message {
 
 describe('onAuth', () => {
   test('Default Function', (done) => {
-    clientSocket.emit('createLobby', 'test');
-    clientSocket.once('message', (msgData: Message) => {
-      expect(msgData.ok).toBe(true);
-      done();
+    onAuth((token: string) => {
+      return true;
     });
+    onLobbyCreate((newLobby)=>{
+      return true
+    })
+    onLobbyJoin((lobbyName, player)=>{
+      return[{
+        id: clientSocket.id,
+        name: 'Guest',
+        ready: false,
+      },]
+    })
+
+    clientSocket.emit('createLobby', 'lobbyName', 'authToken', (players:Player[])=>{
+      expect(players[0]).toStrictEqual({
+          id: clientSocket.id,
+          name: 'Guest',
+          ready: false,
+        });
+      done();
+  });
   });
 
   test('Function returns false', (done) => {
@@ -70,7 +87,9 @@ describe('onAuth', () => {
     onAuth((token: string) => {
       return false;
     });
-    clientSocket.emit('createLobby', 'test');
+    clientSocket.emit('createLobby', 'lobbyName', 'authToken', (players:Player[])=>{
+      //
+      });
     clientSocket.once('message', (msgData: Message) => {
       expect(msgData.ok).toBe(false);
       done();
@@ -92,42 +111,55 @@ describe('onLobbyCreate', () => {
   onLobbyJoin((lobbyName, player)=>{
     const plIndex = myLobbies.findIndex(lobby=>lobby.name===lobbyName);
     myLobbies[plIndex].players.push(player);
-    return true
+    return myLobbies[plIndex].players
   })
-    clientSocket.emit('createLobby', 'test');
-    clientSocket.once('message', (msgData: Message) => {
-      expect(myLobbies[0]).toStrictEqual({
-          name: "test",
-          round: 0,
-          players: [{
+    clientSocket.emit('createLobby', 'lobbyName', 'authToken', (players:Player[])=>{
+        expect(players[0]).toStrictEqual({
             id: clientSocket.id,
             name: 'Guest',
             ready: false,
-          }],
-        });
+          });
       done();
     });
-  });
+    });
 });
 
 describe('onLobbyJoin', () => {
   test('OnJoin', (done) => {
-    clientSocket.emit('joinLobby', 'test');
-    clientSocket.once('message', (msgData: Message) => {
-      expect(myLobbies[0].players[1]).toStrictEqual({
-          id: clientSocket.id,
-          name: 'Guest',
-          ready: false,
-        });
-      done();
+    onAuth((token: string) => {
+      return true;
     });
+    onLobbyCreate((newLobby)=>{
+      return true
+    })
+    onLobbyJoin((lobbyName, player)=>{
+      return[{
+        id: "whocares",
+        name: 'whocares',
+        ready: true,
+      },{
+        id: clientSocket.id,
+        name: 'Guest',
+        ready: false,
+      }]
+    })
+    clientSocket.emit('joinLobby', 'test', (players:Player[])=>{
+      expect(players[1]).toStrictEqual({
+        id: clientSocket.id,
+        name: 'Guest',
+        ready: false,
+      });
+    done();
+      });
   });
 })
 
 describe('playerReadyEmit', () => {
   test('playerReadyEmit', (done) => {
     const readyLobby='test';
-    clientSocket.emit('joinLobby',readyLobby)
+    clientSocket.emit('joinLobby', 'test', (players:Player[])=>{
+      //
+      });
     clientSocket.emit('playerReady', readyLobby);
     clientSocket.once('message',(msg1:Message)=>{
       clientSocket.once('message', (msgData: Message) => {
@@ -144,7 +176,9 @@ describe('startGame', () => {
       return 0
     })
     const readyLobby='test';
-    clientSocket.emit('joinLobby',readyLobby)
+    clientSocket.emit('joinLobby', readyLobby, (player:Player)=>{
+      //
+      });
     clientSocket.emit('playerReady', readyLobby);
     // clientSocket.once('message',(msg1:Message)=>{
     //   clientSocket.once('message', (msgData: Message) => {
