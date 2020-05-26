@@ -4,7 +4,7 @@ import fs from 'fs';
 import { Server, Socket } from 'socket.io';
 import socketIO from 'socket.io';
 import { Application } from "express";
-import { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onPlayerReady, onUpdateSinglePlayer } from './lobbies'
+import { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onPlayerReady, onUpdateSinglePlayer, onGetPlayers } from './lobbies'
 import {Lobby, Player} from './lobbies'
 let io:Server;
 
@@ -65,7 +65,8 @@ export default{
   onPlayerReady,
   startGame,
   startRound,
-  onUpdateSinglePlayer
+  onUpdateSinglePlayer,
+  onGetPlayers
 }
 
 export {
@@ -78,6 +79,7 @@ export {
   startGame,
   startRound,
   onUpdateSinglePlayer,
+  onGetPlayers,
   Lobby,
   Player,
 }

@@ -24,7 +24,8 @@ export type LobbyCreateFn = (lobby: Lobby) => boolean;
 export type LobbyJoinFn = (lobbyName: string, player: Player) => Player[];
 export type PlayerReadyFn = (lobbyName: string, playerId: string) => number;
 export type CallbackFunction = (data: any, error?: string) => void;
-export type UpdateSinglePlayerFn = (lobbyName: string, player: Player) => (Player | null);
+export type UpdateSinglePlayerFn = (lobbyName: string, player: Player) => Player | null;
+export type GetPlayersFn = (lobbyName: string) => Player[] | null;
 
 /*
 ----- The over-writable functions
@@ -35,6 +36,7 @@ let onLobbyCreateFn: LobbyCreateFn = (lobby) => true;
 let onLobbyJoinFn: LobbyJoinFn = (lobbyName, player) => [];
 let onPlayerReadyFn: PlayerReadyFn = (lobbyName, playerId) => -1;
 let onUpdateSinglePlayerFn: UpdateSinglePlayerFn = (lobbyName, player) => null;
+let onGetPlayersFn: GetPlayersFn = (lobbyName) => null;
 
 /**
  * Takes in a function to verify the authToken passed to the server. This function will run before a lobby is created
@@ -79,6 +81,15 @@ export const onUpdateSinglePlayer = (updateSinglePlayerFunction: UpdateSinglePla
 };
 
 /**
+ * Takes in a function to run when a list of players in a lobby needs to be returned
+ * This function takes in the lobby name, it returns the list of players in that lobby
+ * @param {GetPlayersFn} getPlayersFunction
+ */
+export const onGetPlayers = (getPlayersFunction: GetPlayersFn) => {
+  onGetPlayersFn = getPlayersFunction;
+};
+
+/**
  * @private
  * This function sets up the functionality for new connections
  *
@@ -102,9 +113,10 @@ export const connectionHandler = (io: Server) => {
         };
         // Run on lobby create function - Code for this is written on server
         // @HOOK
-        if(onLobbyCreateFn(lobby)){
-        // Join the created Lobby
-        joinLobby(lobbyName, socket, io, callback);} else{
+        if (onLobbyCreateFn(lobby)) {
+          // Join the created Lobby
+          joinLobby(lobbyName, socket, io, callback);
+        } else {
           returnError(`Could not create lobby`, socket);
         }
       } else {
@@ -124,17 +136,27 @@ export const connectionHandler = (io: Server) => {
       playerNum === -1 ? console.error('Error: 🤯 Please implement the onPlayerReadyFunction') : io.to(lobbyName).emit('playerReady', playerNum);
     });
 
-  socket.on('updateSelf', (lobbyName: string, player: Player) => {
-    const playerObj = onUpdateSinglePlayerFn(lobbyName, player);
-    if(playerObj==null){
-      console.error('Error: 🤯 Please implement the onUpdateSinglePlayer');
-    }else if(socket.id!==player.id){
-      console.error(`Error: HACKER ALERT; ${socket.id} Tried  to edit ${player.id}`)
-    } else {
-      console.log('Sending updated player')
-      io.to(lobbyName).emit('playerUpdated', playerObj);
-    }
-  });
+    socket.on('updateSelf', (lobbyName: string, player: Player) => {
+      const playerObj = onUpdateSinglePlayerFn(lobbyName, player);
+      if (playerObj == null) {
+        console.error('Error: 🤯 Please implement the onUpdateSinglePlayer');
+      } else if (socket.id !== player.id) {
+        console.error(`Error: HACKER ALERT; ${socket.id} Tried  to edit ${player.id}`);
+      } else {
+        console.log('Sending updated player');
+        io.to(lobbyName).emit('playerUpdated', playerObj);
+      }
+    });
+
+    socket.on('getPlayers', (lobbyName: string) => {
+      const players = onGetPlayersFn(lobbyName);
+      if (players == null) {
+        console.error('Error: 🤯 Please implement the onGetPlayers');
+      } else {
+        console.log('Sending player list');
+        io.to(lobbyName).emit('getPlayers', players);
+      }
+    });
   });
 };
 
@@ -156,7 +178,7 @@ const joinLobby = (lobbyName: string, socket: Socket, io: Server, callback: Call
   // Run server code for joining a lobby
   // @HOOK
   const players = onLobbyJoinFn(lobbyName, player);
-  if (players.length!==0) {
+  if (players.length !== 0) {
     // Join the Lobby
     socket.join(lobbyName);
     // Announce player has joined
@@ -177,4 +199,4 @@ const returnError = (message: string, socket: Socket) => {
   });
 };
 
-export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onPlayerReady, onUpdateSinglePlayer };
+export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onPlayerReady, onUpdateSinglePlayer, onGetPlayers };

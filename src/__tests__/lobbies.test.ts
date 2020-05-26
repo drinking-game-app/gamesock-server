@@ -3,7 +3,7 @@ import {sockServer,close,onAuth,onLobbyCreate,onLobbyJoin} from '../server';
 // JavaScript socket.io code
 import ioClient from 'socket.io-client';
 import http from 'http';
-import lobbies, { Lobby, onPlayerReady, Player } from '../lobbies';
+import { Lobby, onPlayerReady, Player } from '../lobbies';
 let clientSocket: SocketIOClient.Socket;
 
 let server:http.Server;
