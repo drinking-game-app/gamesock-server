@@ -16,7 +16,7 @@ export interface Player {
   // socketIO id
   readonly id: string;
   name: string;
-  ready: boolean;
+  score: number;
 }
 export type GameSettings = {rounds:number};
 
@@ -25,7 +25,7 @@ export type GameSettings = {rounds:number};
 export type AuthFn = (authToken: string) => boolean;
 export type LobbyCreateFn = (lobby: Lobby) => boolean;
 export type LobbyJoinFn = (lobbyName: string, player: Player) => Player[];
-export type PlayerReadyFn = (lobbyName: string, playerId: string) => number;
+// export type PlayerReadyFn = (lobbyName: string, playerId: string) => number;
 export type CallbackFunction = (data: any, error?: string) => void;
 export type UpdateSinglePlayerFn = (lobbyName: string, player: Player) => Player | null;
 export type GetPlayersFn = (lobbyName: string) => Player[] | null;
@@ -38,7 +38,7 @@ export type StartGameFn = (lobbyName: string, socketId: string) => {ok:boolean,g
 let authorizeFn: AuthFn = (authToken) => true;
 let onLobbyCreateFn: LobbyCreateFn = (lobby) => true;
 let onLobbyJoinFn: LobbyJoinFn = (lobbyName, player) => [];
-let onPlayerReadyFn: PlayerReadyFn = (lobbyName, playerId) => -1;
+// let onPlayerReadyFn: PlayerReadyFn = (lobbyName, playerId) => -1;
 let onUpdateSinglePlayerFn: UpdateSinglePlayerFn = (lobbyName, player) => null;
 let onGetPlayersFn: GetPlayersFn = (lobbyName) => null;
 let onStartGameFn: StartGameFn = (lobbyName, socketId) => {return {ok:true, gameSettings:{rounds:10}}};
@@ -72,9 +72,9 @@ export const onLobbyJoin = (joinFunction: LobbyJoinFn) => {
  * This function takes in the lobby name and player ID, it returns the player number
  * @param {PlayerReadyFn} readyFunction
  */
-export const onPlayerReady = (readyFunction: PlayerReadyFn) => {
-  onPlayerReadyFn = readyFunction;
-};
+// export const onPlayerReady = (readyFunction: PlayerReadyFn) => {
+//   onPlayerReadyFn = readyFunction;
+// };
 
 /**
  * Takes in a function to run when a single player is updated
@@ -140,26 +140,26 @@ export const connectionHandler = (io: Server) => {
       }
     });
 
-    socket.on('playerReady', (lobbyName: string) => {
-      const playerNum = onPlayerReadyFn(lobbyName, socket.id);
-      io.to(lobbyName).emit('message', {
-        ok: true,
-        msg: `${socket.id} in ${lobbyName} is now ready`,
-      });
-      // Catch errors when onPlayerReady is not implemented
-      playerNum === -1 ? console.error('Error: 🤯 Please implement the onPlayerReadyFunction') : io.to(lobbyName).emit('playerReady', playerNum);
-    });
+    // socket.on('playerReady', (lobbyName: string) => {
+    //   const playerNum = onPlayerReadyFn(lobbyName, socket.id);
+    //   io.to(lobbyName).emit('message', {
+    //     ok: true,
+    //     msg: `${socket.id} in ${lobbyName} is now ready`,
+    //   });
+    //   // Catch errors when onPlayerReady is not implemented
+    //   playerNum === -1 ? console.error('Error: 🤯 Please implement the onPlayerReadyFunction') : io.to(lobbyName).emit('playerReady', playerNum);
+    // });
 
     socket.on('updateSelf', (lobbyName: string, player: Player) => {
       const playerObj = onUpdateSinglePlayerFn(lobbyName, player);
-      if (playerObj == null) {
-        console.error('Error: 🤯 Please implement the onUpdateSinglePlayer');
-      } else if (socket.id !== player.id) {
-        console.error(`Error: HACKER ALERT; ${socket.id} Tried  to edit ${player.id}`);
-      } else {
-        console.log('Sending updated player');
-        io.to(lobbyName).emit('playerUpdated', playerObj);
-      }
+        if (playerObj == null) {
+          console.error('Error: 🤯 Please implement the onUpdateSinglePlayer');
+        } else if (socket.id !== player.id) {
+          console.error(`Error: HACKER ALERT; ${socket.id} Tried  to edit ${player.id}`);
+        } else {
+          // io.to(lobbyName).emit('getPlayers', players);
+          io.to(lobbyName).emit('playerUpdated', playerObj);
+        }
     });
 
     socket.on('getPlayers', (lobbyName: string) => {
@@ -197,7 +197,7 @@ const joinLobby = (lobbyName: string, socket: Socket, io: Server, callback: Call
   const player: Player = {
     id: socket.id,
     name: 'Guest',
-    ready: false,
+    score: 0,
   };
   // Run server code for joining a lobby
   // @HOOK
@@ -211,6 +211,7 @@ const joinLobby = (lobbyName: string, socket: Socket, io: Server, callback: Call
       msg: `${socket.id} has just joined ${lobbyName}`,
     });
     callback(players);
+    io.to(lobbyName).emit('getPlayers', players);
   } else {
     returnError(`${lobbyName} does not exist 😕, check the lobby and try again!`, socket);
   }
@@ -223,4 +224,4 @@ const returnError = (message: string, socket: Socket) => {
   });
 };
 
-export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onPlayerReady, onUpdateSinglePlayer, onGetPlayers, onStartGame };
+export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame };
