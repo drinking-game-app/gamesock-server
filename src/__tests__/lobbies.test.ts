@@ -3,7 +3,7 @@ import {sockServer,close,onAuth,onLobbyCreate,onLobbyJoin} from '../server';
 // JavaScript socket.io code
 import ioClient from 'socket.io-client';
 import http from 'http';
-import { Lobby, onPlayerReady, Player } from '../lobbies';
+import { Lobby, Player } from '../lobbies';
 let clientSocket: SocketIOClient.Socket;
 
 let server:http.Server;
@@ -68,7 +68,7 @@ describe('onAuth', () => {
       return[{
         id: clientSocket.id,
         name: 'Guest',
-        ready: false,
+        score: 0,
       },]
     })
 
@@ -76,7 +76,7 @@ describe('onAuth', () => {
       expect(players[0]).toStrictEqual({
           id: clientSocket.id,
           name: 'Guest',
-          ready: false,
+          score: 0,
         });
       done();
   });
@@ -117,7 +117,7 @@ describe('onLobbyCreate', () => {
         expect(players[0]).toStrictEqual({
             id: clientSocket.id,
             name: 'Guest',
-            ready: false,
+            score:0,
           });
       done();
     });
@@ -136,58 +136,55 @@ describe('onLobbyJoin', () => {
       return[{
         id: "whocares",
         name: 'whocares',
-        ready: true,
+        score:10,
       },{
         id: clientSocket.id,
         name: 'Guest',
-        ready: false,
+        score:0,
       }]
     })
     clientSocket.emit('joinLobby', 'test', (players:Player[])=>{
       expect(players[1]).toStrictEqual({
         id: clientSocket.id,
         name: 'Guest',
-        ready: false,
+        score:0,
       });
     done();
       });
   });
 })
 
-describe('playerReadyEmit', () => {
-  test('playerReadyEmit', (done) => {
-    const readyLobby='test';
-    clientSocket.emit('joinLobby', 'test', (players:Player[])=>{
-      //
-      });
-    clientSocket.emit('playerReady', readyLobby);
-    clientSocket.once('message',(msg1:Message)=>{
-      clientSocket.once('message', (msgData: Message) => {
-        expect(msgData.msg).toBe(`${clientSocket.id} in ${readyLobby} is now ready`);
-        done();
-      })
-    ;})
-  });
-})
+// describe('playerReadyEmit', () => {
+//   test('playerReadyEmit', (done) => {
+//     const readyLobby='test';
+//     clientSocket.emit('joinLobby', 'test', (players:Player[])=>{
+//       //
+//       });
+//     clientSocket.emit('playerReady', readyLobby);
+//     clientSocket.once('message',(msg1:Message)=>{
+//       clientSocket.once('message', (msgData: Message) => {
+//         expect(msgData.msg).toBe(`${clientSocket.id} in ${readyLobby} is now ready`);
+//         done();
+//       })
+//     ;})
+//   });
+// })
 
 describe('startGame', () => {
   test('startGameEmit', (done) => {
-    onPlayerReady((lobbyName:string, playerId:string)=>{
-      return 0
-    })
     const readyLobby='test';
     clientSocket.emit('joinLobby', readyLobby, (player:Player)=>{
       //
       });
-    clientSocket.emit('playerReady', readyLobby);
+    clientSocket.emit('startGame', readyLobby);
     // clientSocket.once('message',(msg1:Message)=>{
     //   clientSocket.once('message', (msgData: Message) => {
     //     expect(msgData.msg).toBe(`${clientSocket.id} in ${readyLobby} is now ready`);
     //     done();
     //   })
     // ;})
-    clientSocket.once('playerReady',(playerNum:number)=>{
-      expect(playerNum).toBe(0);
+    clientSocket.once('startGame',(gameOptions:any)=>{
+      expect(gameOptions.rounds).toBe(10);
       done();
     })
   });
