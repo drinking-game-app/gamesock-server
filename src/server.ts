@@ -4,7 +4,7 @@ import fs from 'fs';
 import { Server, Socket } from 'socket.io';
 import socketIO from 'socket.io';
 import { Application } from "express";
-import { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onPlayerReady, onUpdateSinglePlayer, onGetPlayers } from './lobbies'
+import { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onPlayerReady, onUpdateSinglePlayer, onGetPlayers, onStartGame } from './lobbies'
 import {Lobby, Player} from './lobbies'
 let io:Server;
 
@@ -45,15 +45,19 @@ const close =()=>{io.close()}
  * Tells the players to start  the game
  * @param {string} lobbyName The lobby to start
  */
-const startGame=(lobbyName:string)=>{
-  const gameSettings={
-    rounds:10,
-  }
-  io.to(lobbyName).emit('startGame');
-}
+// const startGame=(lobbyName:string)=>{
+//   const gameSettings={
+//     rounds:10,
+//   }
+//   io.to(lobbyName).emit('startGame');
+// }
 
 const startRound=(lobbyName:string,roundNum:number)=>{
   io.to(lobbyName).emit('startRound', roundNum);
+}
+
+const throwToRoom=(lobbyName:string,errorMessage:string)=>{
+  io.to(lobbyName).emit('gamesockError', errorMessage)
 }
 
 export default{
@@ -63,10 +67,11 @@ export default{
   onLobbyCreate,
   onLobbyJoin,
   onPlayerReady,
-  startGame,
+  onStartGame,
   startRound,
   onUpdateSinglePlayer,
-  onGetPlayers
+  onGetPlayers,
+  throwToRoom
 }
 
 export {
@@ -76,10 +81,11 @@ export {
   onLobbyCreate,
   onLobbyJoin,
   onPlayerReady,
-  startGame,
+  onStartGame,
   startRound,
   onUpdateSinglePlayer,
   onGetPlayers,
+  throwToRoom,
   Lobby,
   Player,
 }

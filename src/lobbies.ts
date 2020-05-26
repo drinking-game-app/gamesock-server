@@ -18,6 +18,9 @@ export interface Player {
   name: string;
   ready: boolean;
 }
+export type GameSettings = {rounds:number};
+
+
 
 export type AuthFn = (authToken: string) => boolean;
 export type LobbyCreateFn = (lobby: Lobby) => boolean;
@@ -26,6 +29,7 @@ export type PlayerReadyFn = (lobbyName: string, playerId: string) => number;
 export type CallbackFunction = (data: any, error?: string) => void;
 export type UpdateSinglePlayerFn = (lobbyName: string, player: Player) => Player | null;
 export type GetPlayersFn = (lobbyName: string) => Player[] | null;
+export type StartGameFn = (lobbyName: string, socketId: string) => {ok:boolean,gameSettings:GameSettings}
 
 /*
 ----- The over-writable functions
@@ -37,6 +41,7 @@ let onLobbyJoinFn: LobbyJoinFn = (lobbyName, player) => [];
 let onPlayerReadyFn: PlayerReadyFn = (lobbyName, playerId) => -1;
 let onUpdateSinglePlayerFn: UpdateSinglePlayerFn = (lobbyName, player) => null;
 let onGetPlayersFn: GetPlayersFn = (lobbyName) => null;
+let onStartGameFn: StartGameFn = (lobbyName, socketId) => {return {ok:true, gameSettings:{rounds:10}}};
 
 /**
  * Takes in a function to verify the authToken passed to the server. This function will run before a lobby is created
@@ -88,6 +93,15 @@ export const onUpdateSinglePlayer = (updateSinglePlayerFunction: UpdateSinglePla
 export const onGetPlayers = (getPlayersFunction: GetPlayersFn) => {
   onGetPlayersFn = getPlayersFunction;
 };
+
+/**
+ * Takes in a function to run when the host starts a game
+ * This function takes in the lobby name and socket ID, it returns a boolean to allow game creation or not
+ * @param {StartGameFn} startGameFunction
+ */
+export const onStartGame = (startGameFunction: StartGameFn) => {
+  onStartGameFn = startGameFunction;
+}
 
 /**
  * @private
@@ -157,6 +171,16 @@ export const connectionHandler = (io: Server) => {
         io.to(lobbyName).emit('getPlayers', players);
       }
     });
+
+    socket.on('startGame', (lobbyName: string) => {
+      const options = onStartGameFn(lobbyName, socket.id);
+
+      if(options.ok){
+        io.to(lobbyName).emit('startGame',options.gameSettings);
+      }else{
+        returnError('Could not start game',socket)
+      }
+    })
   });
 };
 
@@ -199,4 +223,4 @@ const returnError = (message: string, socket: Socket) => {
   });
 };
 
-export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onPlayerReady, onUpdateSinglePlayer, onGetPlayers };
+export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onPlayerReady, onUpdateSinglePlayer, onGetPlayers, onStartGame };
