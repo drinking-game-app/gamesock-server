@@ -5,7 +5,9 @@ import { Server, Socket } from 'socket.io';
 import socketIO from 'socket.io';
 import { Application } from "express";
 import { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame } from './lobbies'
-import {Lobby, Player} from './lobbies'
+import {Lobby, Player,RoundOptions} from './lobbies'
+// @ts-ignore
+import timesyncServer from 'timesync/server';
 let io:Server;
 
 /**
@@ -17,6 +19,7 @@ let io:Server;
  *  @returns {https.Server} A http server
  */
 const sockServer = (app: Application, httpsOn:boolean) => {
+  app.use('/timesync', timesyncServer.requestHandler);
   let server;
   // Choosing https or not - untested
   if (httpsOn) {
@@ -41,24 +44,19 @@ const sockServer = (app: Application, httpsOn:boolean) => {
  */
 const close =()=>{io.close()}
 
-/**
- * Tells the players to start  the game
- * @param {string} lobbyName The lobby to start
- */
-// const startGame=(lobbyName:string)=>{
-//   const gameSettings={
-//     rounds:10,
-//   }
-//   io.to(lobbyName).emit('startGame');
-// }
-
-const startRound=(lobbyName:string,roundNum:number)=>{
-  io.to(lobbyName).emit('startRound', roundNum);
+ const startRound = (lobbyName:string, roundOptions:RoundOptions)=>{
+   roundOptions.time=30
+   roundOptions.timerStart=Date.now()+( 3 * 1000)
+  io.to(lobbyName).emit('startRound', roundOptions);
 }
 
 const throwToRoom=(lobbyName:string,errorMessage:string)=>{
   io.to(lobbyName).emit('gamesockError', errorMessage)
 }
+
+
+
+
 
 export default{
   sockServer,
@@ -86,4 +84,5 @@ export {
   throwToRoom,
   Lobby,
   Player,
+  RoundOptions
 }

@@ -35,6 +35,7 @@
     "typescript": "^3.8.3"
   },
   "dependencies": {
-    "socket.io": "^2.3.0"
+    "socket.io": "^2.3.0",
+    "timesync": "^1.0.5"
   }
 }

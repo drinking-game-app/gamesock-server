@@ -18,18 +18,30 @@ export interface Player {
   name: string;
   score: number;
 }
-export type GameSettings = {rounds:number};
 
+export type RoundOptions = {
+  // Current round number
+  roundNum:number;
+  // Players picked to be in the hotseat
+  hotseatPlayers: [Player,Player];
+  // Number of questions to answer
+  numQuestions:number;
+  // // Time to fill in questions in seconds
+  time?:number
+  // // Time to start first timer: Date.now foramt
+  timerStart?:number
+};
 
+export type GameSettings = { rounds: number };
 
 export type AuthFn = (authToken: string) => boolean;
 export type LobbyCreateFn = (lobby: Lobby) => boolean;
 export type LobbyJoinFn = (lobbyName: string, player: Player) => Player[];
-// export type PlayerReadyFn = (lobbyName: string, playerId: string) => number;
 export type CallbackFunction = (data: any, error?: string) => void;
 export type UpdateSinglePlayerFn = (lobbyName: string, player: Player) => Player | null;
 export type GetPlayersFn = (lobbyName: string) => Player[] | null;
-export type StartGameFn = (lobbyName: string, socketId: string) => {ok:boolean,gameSettings:GameSettings}
+export type StartGameFn = (lobbyName: string, socketId: string) => { ok: boolean; gameSettings: GameSettings };
+// export type StartRoundFn = () => { roundOptions: RoundOptions };
 
 /*
 ----- The over-writable functions
@@ -38,10 +50,20 @@ export type StartGameFn = (lobbyName: string, socketId: string) => {ok:boolean,g
 let authorizeFn: AuthFn = (authToken) => true;
 let onLobbyCreateFn: LobbyCreateFn = (lobby) => true;
 let onLobbyJoinFn: LobbyJoinFn = (lobbyName, player) => [];
-// let onPlayerReadyFn: PlayerReadyFn = (lobbyName, playerId) => -1;
 let onUpdateSinglePlayerFn: UpdateSinglePlayerFn = (lobbyName, player) => null;
 let onGetPlayersFn: GetPlayersFn = (lobbyName) => null;
-let onStartGameFn: StartGameFn = (lobbyName, socketId) => {return {ok:true, gameSettings:{rounds:10}}};
+let onStartGameFn: StartGameFn = (lobbyName, socketId) => {
+  return { ok: true, gameSettings: { rounds: 10 } };
+};
+// let onStartRoundFn: StartRoundFn = () => {
+//   return {
+//     roundOptions: {
+//       roundNum: 1,
+//       hotseatPlayers: [1,1],
+//       numQuestions: 5,
+//     }
+//   }
+// };
 
 /**
  * Takes in a function to verify the authToken passed to the server. This function will run before a lobby is created
@@ -68,15 +90,6 @@ export const onLobbyJoin = (joinFunction: LobbyJoinFn) => {
 };
 
 /**
- * Takes in a function to run when a lobby is joined by a player
- * This function takes in the lobby name and player ID, it returns the player number
- * @param {PlayerReadyFn} readyFunction
- */
-// export const onPlayerReady = (readyFunction: PlayerReadyFn) => {
-//   onPlayerReadyFn = readyFunction;
-// };
-
-/**
  * Takes in a function to run when a single player is updated
  * This function takes in the lobby name and player, it returns the updated player
  * @param {UpdateSinglePlayerFn} updateSinglePlayerFunction
@@ -101,7 +114,16 @@ export const onGetPlayers = (getPlayersFunction: GetPlayersFn) => {
  */
 export const onStartGame = (startGameFunction: StartGameFn) => {
   onStartGameFn = startGameFunction;
-}
+};
+
+// /**
+//  * Takes in a function to run when a round is to start
+//  * This function takes in no parameters, it returns the round options
+//  * @param {StartRoundFn} startRoundFunction
+//  */
+// export const onStartRound = (startRoundFunction: StartRoundFn) => {
+//   onStartRoundFn = startRoundFunction;
+// };
 
 /**
  * @private
@@ -140,26 +162,16 @@ export const connectionHandler = (io: Server) => {
       }
     });
 
-    // socket.on('playerReady', (lobbyName: string) => {
-    //   const playerNum = onPlayerReadyFn(lobbyName, socket.id);
-    //   io.to(lobbyName).emit('message', {
-    //     ok: true,
-    //     msg: `${socket.id} in ${lobbyName} is now ready`,
-    //   });
-    //   // Catch errors when onPlayerReady is not implemented
-    //   playerNum === -1 ? console.error('Error: 🤯 Please implement the onPlayerReadyFunction') : io.to(lobbyName).emit('playerReady', playerNum);
-    // });
-
     socket.on('updateSelf', (lobbyName: string, player: Player) => {
       const playerObj = onUpdateSinglePlayerFn(lobbyName, player);
-        if (playerObj == null) {
-          console.error('Error: 🤯 Please implement the onUpdateSinglePlayer');
-        } else if (socket.id !== player.id) {
-          console.error(`Error: HACKER ALERT; ${socket.id} Tried  to edit ${player.id}`);
-        } else {
-          // io.to(lobbyName).emit('getPlayers', players);
-          io.to(lobbyName).emit('playerUpdated', playerObj);
-        }
+      if (playerObj == null) {
+        console.error('Error: 🤯 Please implement the onUpdateSinglePlayer');
+      } else if (socket.id !== player.id) {
+        console.error(`Error: HACKER ALERT; ${socket.id} Tried  to edit ${player.id}`);
+      } else {
+        // io.to(lobbyName).emit('getPlayers', players);
+        io.to(lobbyName).emit('playerUpdated', playerObj);
+      }
     });
 
     socket.on('getPlayers', (lobbyName: string) => {
@@ -175,14 +187,19 @@ export const connectionHandler = (io: Server) => {
     socket.on('startGame', (lobbyName: string) => {
       const options = onStartGameFn(lobbyName, socket.id);
 
-      if(options.ok){
-        io.to(lobbyName).emit('startGame',options.gameSettings);
-      }else{
-        returnError('Could not start game',socket)
+      if (options.ok) {
+        io.to(lobbyName).emit('startGame', options.gameSettings);
+      } else {
+        returnError('Could not start game', socket);
       }
-    })
+    });
   });
 };
+
+
+
+
+
 
 /**
  * @private
