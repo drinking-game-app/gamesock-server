@@ -55,15 +55,6 @@ let onGetPlayersFn: GetPlayersFn = (lobbyName) => null;
 let onStartGameFn: StartGameFn = (lobbyName, socketId) => {
   return { ok: true, gameSettings: { rounds: 10 } };
 };
-// let onStartRoundFn: StartRoundFn = () => {
-//   return {
-//     roundOptions: {
-//       roundNum: 1,
-//       hotseatPlayers: [1,1],
-//       numQuestions: 5,
-//     }
-//   }
-// };
 
 /**
  * Takes in a function to verify the authToken passed to the server. This function will run before a lobby is created
@@ -116,14 +107,6 @@ export const onStartGame = (startGameFunction: StartGameFn) => {
   onStartGameFn = startGameFunction;
 };
 
-// /**
-//  * Takes in a function to run when a round is to start
-//  * This function takes in no parameters, it returns the round options
-//  * @param {StartRoundFn} startRoundFunction
-//  */
-// export const onStartRound = (startRoundFunction: StartRoundFn) => {
-//   onStartRoundFn = startRoundFunction;
-// };
 
 /**
  * @private
