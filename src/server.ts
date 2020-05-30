@@ -64,8 +64,8 @@ const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
 
   for (const player of players) {
     const playerSocket=io.of("/").connected[player];
-    const timeTillStart=Date.now()-roundOptions.timerStart
-    const timeOut=(timeTillStart>0?timeTillStart:0)+(((roundOptions.time || 30)+ 2) * 1000);
+    const timeTillStart=roundOptions.timerStart-Date.now()
+    const timeOut=(timeTillStart>0?timeTillStart:0)+(((roundOptions.time || 30)+ 1) * 1000);
     console.log('Timerout',timeOut)
     setTimeout(
       () =>
@@ -75,7 +75,7 @@ const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
           if(data.questions.length !== roundOptions.numQuestions)console.error('WRONG QUESTION AMOUNT',data.questions)
           // Push the questions into the array
           for (const newQuestion of data.questions) {
-            allQuestions.push({ id: 'socket.id', question: newQuestion });
+            allQuestions.push({ id: player, question: newQuestion });
           }
           if (data.questions.length >= roundOptions.numQuestions * players.length) {
             // Run a return question function
