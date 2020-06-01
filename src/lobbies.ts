@@ -48,7 +48,8 @@ export type UpdateSinglePlayerFn = (lobbyName: string, player: Player) => Player
 export type GetPlayersFn = (lobbyName: string) => Player[] | null;
 export type StartGameFn = (lobbyName: string, socketId: string) => { ok: boolean; gameSettings: GameSettings };
 export type DisconnectFn = (lobbyName: string, socketId: string) => void;
-export type ReturnQuestionsFn = (lobbyName: string, questions:Question[], roundOptions:RoundOptions) => Question[];
+export type ReturnQuestionsFn = (lobbyName: string, questions: Question[], roundOptions: RoundOptions) => Question[];
+export type AnswerQuestionFn = (lobbyName: string,socketId:string, questionNumber: number) => void;
 // export type StartRoundFn = () => { roundOptions: RoundOptions };
 
 /*
@@ -67,6 +68,7 @@ let onDisconnectFn: DisconnectFn = (lobbyName: string, socketId: string) => {
   //
 }
 let onReturnQuestionsFn: ReturnQuestionsFn;
+let onAnswerQuestionFn: AnswerQuestionFn;
 
 
 /**
@@ -125,7 +127,9 @@ export const onDisconnect = (newDisconnectFn: DisconnectFn) => {
 export const onReturnQuestions=(newOnReturnQuestionsFn:ReturnQuestionsFn)=>{
   onReturnQuestionsFn=newOnReturnQuestionsFn;
 }
-
+export const onAnswerQuestions=(newAnswerQuestionFn:AnswerQuestionFn)=>{
+  onAnswerQuestionFn=newAnswerQuestionFn;
+}
 
 
 
@@ -201,12 +205,20 @@ export const connectionHandler = (thisIO: Server) => {
       }
     });
 
-    socket.on('hotseatAnswer', (lobbyName: string, question: number) => {
-      // onHotseatAnswer(lobbyName,socket.id,question)
+    socket.on('hotseatAnswer', (lobbyName: string, questionNumber: number) => {
+      onAnswerQuestionFn(lobbyName,socket.id,questionNumber)
     })
 
 
-    socket.on('disconnect', ()=>onDisconnectFn(socket.rooms[Object.keys(socket.rooms)[0]], socket.id));
+    socket.on('disconnecting', (reason) => {
+      const lobbyName = Object.keys(socket.rooms).filter(item => item!==socket.id)[0];
+      console.log('nameoaxd',lobbyName)
+      io.to(lobbyName).emit('message', {
+        ok: true,
+        msg: `${socket.id} has just left ${lobbyName} because of ${reason}`,
+      });
+      onDisconnectFn(lobbyName, socket.id)
+    });
   });
 };
 
