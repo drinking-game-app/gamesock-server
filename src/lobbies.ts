@@ -32,8 +32,14 @@ export type RoundOptions = {
   timerStart?:number
 };
 
-export type GameSettings = { rounds: number };
+export interface Question{
+  id:string
+  question:string
+  // Time to Start
+  tts?:number
+}
 
+export type GameSettings = { rounds: number };
 export type AuthFn = (authToken: string) => boolean;
 export type LobbyCreateFn = (lobby: Lobby) => boolean;
 export type LobbyJoinFn = (lobbyName: string, player: Player) => Player[];
@@ -41,6 +47,8 @@ export type CallbackFunction = (data: any, error?: string) => void;
 export type UpdateSinglePlayerFn = (lobbyName: string, player: Player) => Player | null;
 export type GetPlayersFn = (lobbyName: string) => Player[] | null;
 export type StartGameFn = (lobbyName: string, socketId: string) => { ok: boolean; gameSettings: GameSettings };
+export type DisconnectFn = (lobbyName: string, socketId: string) => void;
+export type ReturnQuestionsFn = (lobbyName: string, questions:Question[], roundOptions:RoundOptions) => Question[];
 // export type StartRoundFn = () => { roundOptions: RoundOptions };
 
 /*
@@ -55,6 +63,11 @@ let onGetPlayersFn: GetPlayersFn = (lobbyName) => null;
 let onStartGameFn: StartGameFn = (lobbyName, socketId) => {
   return { ok: true, gameSettings: { rounds: 10 } };
 };
+let onDisconnectFn: DisconnectFn = (lobbyName: string, socketId: string) => {
+  //
+}
+let onReturnQuestionsFn: ReturnQuestionsFn;
+
 
 /**
  * Takes in a function to verify the authToken passed to the server. This function will run before a lobby is created
@@ -106,15 +119,26 @@ export const onGetPlayers = (getPlayersFunction: GetPlayersFn) => {
 export const onStartGame = (startGameFunction: StartGameFn) => {
   onStartGameFn = startGameFunction;
 };
+export const onDisconnect = (newDisconnectFn: DisconnectFn) => {
+  onDisconnectFn = newDisconnectFn;
+};
+export const onReturnQuestions=(newOnReturnQuestionsFn:ReturnQuestionsFn)=>{
+  onReturnQuestionsFn=newOnReturnQuestionsFn;
+}
 
 
+
+
+
+let io:Server;
 /**
  * @private
  * This function sets up the functionality for new connections
  *
  * @param {Server} io The SocketIo server which is being connected to
  */
-export const connectionHandler = (io: Server) => {
+export const connectionHandler = (thisIO: Server) => {
+  io=thisIO;
   // When a new client connects
   io.on('connection', (socket: Socket) => {
     socket.on('joinLobby', (lobbyName: string, callback: CallbackFunction) => {
@@ -176,11 +200,70 @@ export const connectionHandler = (io: Server) => {
         returnError('Could not start game', socket);
       }
     });
+
+    socket.on('hotseatAnswer', (lobbyName: string, question: number) => {
+      // onHotseatAnswer(lobbyName,socket.id,question)
+    })
+
+
+    socket.on('disconnect', ()=>onDisconnectFn(socket.rooms[Object.keys(socket.rooms)[0]], socket.id));
   });
 };
 
 
+/**
+ * Start a round
+ * @param lobbyName
+ * @param roundOptions
+ */
+export const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
+  //  roundOptions.time=30
+  roundOptions.timerStart = Date.now() + 4 * 1000;
+  io.to(lobbyName).emit('startRound', roundOptions);
+  // dont send next to hotseatplayers
+  // let players = Object.keys(io.nsps['/'].adapter.rooms[lobbyName].sockets);
+  let players:Player[] = onGetPlayersFn(lobbyName) as Player[];
+  console.log('AllPlayers',players)
+  players = players.filter((player:Player) => player.id !== roundOptions.hotseatPlayers[0].id && player.id !== roundOptions.hotseatPlayers[1].id);
+  console.log('newPlayers',players)
+  let allQuestions:Question[] = [];
 
+  for (const player of players) {
+    const playerSocket=io.of("/").connected[player.id];
+    const timeTillStart=roundOptions.timerStart-Date.now()
+    const timeOut=(timeTillStart>0?timeTillStart:0)+(((roundOptions.time || 30)+ 1) * 1000);
+    console.log('Timerout',timeOut)
+    setTimeout(
+      () =>
+        playerSocket.emit('collectQuestions', (data:{ok:boolean,questions: string[]}) => {
+          console.log('collected for'+player.id,data.questions)
+          // Delete any extra questions that might get passed in
+          if(data.questions.length !== roundOptions.numQuestions)console.error('WRONG QUESTION AMOUNT',data.questions)
+          // Push the questions into the array
+          for (const newQuestion of data.questions) {
+            allQuestions.push({ id: player.id, question: newQuestion });
+          }
+          if (allQuestions.length >= roundOptions.numQuestions * players.length) {
+            // Run a return question function
+            console.log('done', allQuestions)
+            allQuestions = onReturnQuestionsFn(lobbyName, allQuestions, roundOptions);
+            console.log('shuffled= ', allQuestions)
+            // startHotseat(lobbyName, shuffledQuestions,roundOptions,);
+            // for (const question of allQuestions){
+            //  // Time to answer*delay to catch up
+            //   question.tts= Date.now() + {Time to anwser + delay}(((3+3) *i )*1000) + {Delay till first question}(4000)
+            // }
+            //  io.to(lobbyName).emit('startHotseat', allQuestions, hotseatOptions)
+            // {Wait for delay till first question}
+            // In listeners {mutate question as soon as answered -> server}
+            // {every (6 seconds) send out the answers for the question to all in room}
+            // finally emit a round end signal
+          }
+        }),
+      timeOut
+    );
+  }
+};
 
 
 
@@ -192,7 +275,7 @@ export const connectionHandler = (io: Server) => {
  * @param {Socket} socket The socket which is joining
  * @param {Server} io The IO server
  */
-const joinLobby = (lobbyName: string, socket: Socket, io: Server, callback: CallbackFunction) => {
+const joinLobby = (lobbyName: string, socket: Socket, serverio: Server, callback: CallbackFunction) => {
   // Default player passed through to server
   const player: Player = {
     id: socket.id,
@@ -206,12 +289,12 @@ const joinLobby = (lobbyName: string, socket: Socket, io: Server, callback: Call
     // Join the Lobby
     socket.join(lobbyName);
     // Announce player has joined
-    io.to(lobbyName).emit('message', {
+    serverio.to(lobbyName).emit('message', {
       ok: true,
       msg: `${socket.id} has just joined ${lobbyName}`,
     });
     callback(players);
-    io.to(lobbyName).emit('getPlayers', players);
+    serverio.to(lobbyName).emit('getPlayers', players);
   } else {
     returnError(`${lobbyName} does not exist 😕, check the lobby and try again!`, socket);
   }
@@ -224,4 +307,4 @@ const returnError = (message: string, socket: Socket) => {
   });
 };
 
-export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame };
+export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame, onDisconnect,startRound,onReturnQuestions };
