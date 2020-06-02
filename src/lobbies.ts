@@ -10,6 +10,7 @@ export interface Lobby {
   round: 0;
   // Host will always be players[0]
   players: Player[];
+  questions?:Question[]
 }
 
 export interface Player {
@@ -21,22 +22,23 @@ export interface Player {
 
 export type RoundOptions = {
   // Current round number
-  roundNum:number;
+  roundNum: number;
   // Players picked to be in the hotseat
-  hotseatPlayers: [Player,Player];
+  hotseatPlayers: [Player, Player];
   // Number of questions to answer
-  numQuestions:number;
+  numQuestions: number;
   // // Time to fill in questions in seconds
-  time?:number
+  time?: number;
   // // Time to start first timer: Date.now foramt
-  timerStart?:number
+  timerStart?: number;
 };
 
-export interface Question{
-  id:string
-  question:string
+export interface Question {
+  playerId: string;
+  question: string;
   // Time to Start
-  tts?:number
+  tts?: number;
+  answers?: number[];
 }
 
 export type GameSettings = { rounds: number };
@@ -49,7 +51,9 @@ export type GetPlayersFn = (lobbyName: string) => Player[] | null;
 export type StartGameFn = (lobbyName: string, socketId: string) => { ok: boolean; gameSettings: GameSettings };
 export type DisconnectFn = (lobbyName: string, socketId: string) => void;
 export type ReturnQuestionsFn = (lobbyName: string, questions: Question[], roundOptions: RoundOptions) => Question[];
-export type AnswerQuestionFn = (lobbyName: string,socketId:string, questionNumber: number) => void;
+export type AnswerQuestionFn = (lobbyName: string, socketId: string, questionNumber: number, answer: number) => void;
+export type RequestAnswerFn = (lobbyName: string, questionIndex: number) => number[];
+export type RoundEndFn = (lobbyName: string) =>void;
 // export type StartRoundFn = () => { roundOptions: RoundOptions };
 
 /*
@@ -66,10 +70,11 @@ let onStartGameFn: StartGameFn = (lobbyName, socketId) => {
 };
 let onDisconnectFn: DisconnectFn = (lobbyName: string, socketId: string) => {
   //
-}
+};
 let onReturnQuestionsFn: ReturnQuestionsFn;
 let onAnswerQuestionFn: AnswerQuestionFn;
-
+let onRequestAnswerFn: RequestAnswerFn;
+let onRoundEndFn: RoundEndFn;
 
 /**
  * Takes in a function to verify the authToken passed to the server. This function will run before a lobby is created
@@ -124,17 +129,20 @@ export const onStartGame = (startGameFunction: StartGameFn) => {
 export const onDisconnect = (newDisconnectFn: DisconnectFn) => {
   onDisconnectFn = newDisconnectFn;
 };
-export const onReturnQuestions=(newOnReturnQuestionsFn:ReturnQuestionsFn)=>{
-  onReturnQuestionsFn=newOnReturnQuestionsFn;
-}
-export const onAnswerQuestions=(newAnswerQuestionFn:AnswerQuestionFn)=>{
-  onAnswerQuestionFn=newAnswerQuestionFn;
-}
+export const onReturnQuestions = (newOnReturnQuestionsFn: ReturnQuestionsFn) => {
+  onReturnQuestionsFn = newOnReturnQuestionsFn;
+};
+export const onAnswerQuestions = (newAnswerQuestionFn: AnswerQuestionFn) => {
+  onAnswerQuestionFn = newAnswerQuestionFn;
+};
+export const onRequestAnswer = (newRequestAnswerFn: RequestAnswerFn) => {
+  onRequestAnswerFn = newRequestAnswerFn;
+};
+export const onRoundEnd = (newRoundEndFn: RoundEndFn) => {
+  onRoundEndFn = newRoundEndFn;
+};
 
-
-
-
-let io:Server;
+let io: Server;
 /**
  * @private
  * This function sets up the functionality for new connections
@@ -142,7 +150,7 @@ let io:Server;
  * @param {Server} io The SocketIo server which is being connected to
  */
 export const connectionHandler = (thisIO: Server) => {
-  io=thisIO;
+  io = thisIO;
   // When a new client connects
   io.on('connection', (socket: Socket) => {
     socket.on('joinLobby', (lobbyName: string, callback: CallbackFunction) => {
@@ -205,23 +213,21 @@ export const connectionHandler = (thisIO: Server) => {
       }
     });
 
-    socket.on('hotseatAnswer', (lobbyName: string, questionNumber: number) => {
-      onAnswerQuestionFn(lobbyName,socket.id,questionNumber)
-    })
-
+    socket.on('hotseatAnswer', (lobbyName: string, questionNumber: number, answer: number) => {
+      onAnswerQuestionFn(lobbyName, socket.id, questionNumber, answer);
+    });
 
     socket.on('disconnecting', (reason) => {
-      const lobbyName = Object.keys(socket.rooms).filter(item => item!==socket.id)[0];
-      console.log('nameoaxd',lobbyName)
+      const lobbyName = Object.keys(socket.rooms).filter((item) => item !== socket.id)[0];
+      console.log('nameoaxd', lobbyName);
       io.to(lobbyName).emit('message', {
         ok: true,
         msg: `${socket.id} has just left ${lobbyName} because of ${reason}`,
       });
-      onDisconnectFn(lobbyName, socket.id)
+      onDisconnectFn(lobbyName, socket.id);
     });
   });
 };
-
 
 /**
  * Start a round
@@ -234,50 +240,65 @@ export const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
   io.to(lobbyName).emit('startRound', roundOptions);
   // dont send next to hotseatplayers
   // let players = Object.keys(io.nsps['/'].adapter.rooms[lobbyName].sockets);
-  let players:Player[] = onGetPlayersFn(lobbyName) as Player[];
-  console.log('AllPlayers',players)
-  players = players.filter((player:Player) => player.id !== roundOptions.hotseatPlayers[0].id && player.id !== roundOptions.hotseatPlayers[1].id);
-  console.log('newPlayers',players)
-  let allQuestions:Question[] = [];
+  let players: Player[] = onGetPlayersFn(lobbyName) as Player[];
+  console.log('AllPlayers', players);
+  players = players.filter((player: Player) => player.id !== roundOptions.hotseatPlayers[0].id && player.id !== roundOptions.hotseatPlayers[1].id);
+  console.log('newPlayers', players);
+  let allQuestions: Question[] = [];
 
   for (const player of players) {
-    const playerSocket=io.of("/").connected[player.id];
-    const timeTillStart=roundOptions.timerStart-Date.now()
-    const timeOut=(timeTillStart>0?timeTillStart:0)+(((roundOptions.time || 30)+ 1) * 1000);
-    console.log('Timerout',timeOut)
+    const playerSocket = io.of('/').connected[player.id];
+    const timeTillStart = roundOptions.timerStart - Date.now();
+    const timeOut = (timeTillStart > 0 ? timeTillStart : 0) + ((roundOptions.time || 30) + 1) * 1000;
+    console.log('Timerout', timeOut);
     setTimeout(
       () =>
-        playerSocket.emit('collectQuestions', (data:{ok:boolean,questions: string[]}) => {
-          console.log('collected for'+player.id,data.questions)
+        playerSocket.emit('collectQuestions', (data: { ok: boolean; questions: string[] }) => {
+          console.log('collected for' + player.id, data.questions);
           // Delete any extra questions that might get passed in
-          if(data.questions.length !== roundOptions.numQuestions)console.error('WRONG QUESTION AMOUNT',data.questions)
+          if (data.questions.length !== roundOptions.numQuestions) console.error('WRONG QUESTION AMOUNT', data.questions);
           // Push the questions into the array
           for (const newQuestion of data.questions) {
-            allQuestions.push({ id: player.id, question: newQuestion });
+            allQuestions.push({ playerId: player.id, question: newQuestion });
           }
           if (allQuestions.length >= roundOptions.numQuestions * players.length) {
             // Run a return question function
-            console.log('done', allQuestions)
+            console.log('done', allQuestions);
             allQuestions = onReturnQuestionsFn(lobbyName, allQuestions, roundOptions);
-            console.log('shuffled= ', allQuestions)
+            console.log('shuffled= ', allQuestions);
             // startHotseat(lobbyName, shuffledQuestions,roundOptions,);
-            // for (const question of allQuestions){
-            //  // Time to answer*delay to catch up
-            //   question.tts= Date.now() + {Time to anwser + delay}(((3+3) *i )*1000) + {Delay till first question}(4000)
-            // }
-            //  io.to(lobbyName).emit('startHotseat', allQuestions, hotseatOptions)
-            // {Wait for delay till first question}
-            // In listeners {mutate question as soon as answered -> server}
-            // {every (6 seconds) send out the answers for the question to all in room}
-            // finally emit a round end signal
+            const hotseatOptions = {
+              // Time to answer
+              tta: 3,
+            };
+            const timeTillNextQuestion = 3;
+            const delayTillStart = 4000;
+            for (const [questionIndex, question] of allQuestions.entries()) {
+              // Get the start time for each question
+              question.tts = Date.now() + (hotseatOptions.tta + timeTillNextQuestion) * questionIndex * 1000 + delayTillStart;
+              // start the timer
+              setTimeout(() => {
+                console.log('starting'+questionIndex)
+                // Send answer to question
+                const answers = onRequestAnswerFn(lobbyName, questionIndex); // This should return the answers for the question-format:[0,0] or [1,null] for example
+                // Emit answers to all players
+                io.to(lobbyName).emit('hotseatResult', questionIndex, answers);
+                // Emit round end signal when done
+                if (questionIndex === allQuestions.length - 1) {
+                  // Tell server round has ended
+                  onRoundEndFn(lobbyName)
+                  io.to(lobbyName).emit('roundEnd');
+                }
+              }, Date.now() - question.tts!);
+            }
+            // Emit the start hotseat to sync players
+            io.to(lobbyName).emit('startHotseat', allQuestions, hotseatOptions);
           }
         }),
       timeOut
     );
   }
 };
-
-
 
 /**
  * @private
@@ -319,4 +340,4 @@ const returnError = (message: string, socket: Socket) => {
   });
 };
 
-export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame, onDisconnect,startRound,onReturnQuestions };
+export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame, onDisconnect, startRound, onReturnQuestions,onRoundEnd};

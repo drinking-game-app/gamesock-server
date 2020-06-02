@@ -4,7 +4,7 @@ import fs from 'fs';
 import { Server, Socket } from 'socket.io';
 import socketIO from 'socket.io';
 import { Application } from 'express';
-import { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame,startRound,onDisconnect,onReturnQuestions } from './lobbies';
+import { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame,startRound,onDisconnect,onReturnQuestions, onRequestAnswer, onRoundEnd, onAnswerQuestions } from './lobbies';
 import { Lobby, Player, RoundOptions,Question } from './lobbies';
 // @ts-ignore
 import timesyncServer from 'timesync/server';
@@ -48,11 +48,6 @@ const close = () => {
   io.close();
 };
 
-
-
-
-
-
 const throwToRoom = (lobbyName: string, errorMessage: string) => {
   io.to(lobbyName).emit('gamesockError', errorMessage);
 };
@@ -70,6 +65,9 @@ export default {
   throwToRoom,
   onReturnQuestions,
   onDisconnect,
+  onRequestAnswer,
+  onRoundEnd,
+  onAnswerQuestions
 };
 
-export { sockServer, close, onAuth, onLobbyCreate, onLobbyJoin, onStartGame, startRound, onUpdateSinglePlayer, onGetPlayers, throwToRoom, Lobby, Player,Question, RoundOptions ,onReturnQuestions,onDisconnect};
+export { sockServer, close, onAuth, onLobbyCreate, onLobbyJoin, onStartGame, startRound, onUpdateSinglePlayer, onGetPlayers, throwToRoom, Lobby, Player,Question, RoundOptions ,onReturnQuestions,onDisconnect,onRequestAnswer,onRoundEnd,onAnswerQuestions};
