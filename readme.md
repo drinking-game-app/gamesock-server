@@ -1,5 +1,6 @@
 ![Node CI](https://github.com/drinking-game-app/gamesock-server/workflows/Node%20CI/badge.svg?branch=master)
 ![coverage-badge](/coverage/badge.svg)
+![NPM Version](https://img.shields.io/npm/v/@rossmacd/gamesock-server?style=for-the-badge)
 # Gamesock-Server
 A Server-side Networking library to handle the websocket portion of drinking games built with node
 
