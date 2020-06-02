@@ -10,7 +10,8 @@ export interface Lobby {
   round: 0;
   // Host will always be players[0]
   players: Player[];
-  questions?:Question[]
+  questions?: Question[]
+  currentHotseat?:[string,string]
 }
 
 export interface Player {
@@ -289,7 +290,7 @@ export const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
                   onRoundEndFn(lobbyName)
                   io.to(lobbyName).emit('roundEnd');
                 }
-              }, Date.now() - question.tts!);
+              }, question.tts!-Date.now());
             }
             // Emit the start hotseat to sync players
             io.to(lobbyName).emit('startHotseat', allQuestions, hotseatOptions);
