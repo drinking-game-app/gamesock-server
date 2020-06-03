@@ -313,7 +313,7 @@ const joinLobby = (lobbyName: string, socket: Socket, serverio: Server, callback
   // Default player passed through to server
   const player: Player = {
     id: socket.id,
-    name: 'Guest'+btoa((+new Date()).toString()).toString().substr(-7, 5),
+    name: 'Guest'+(+new Date()).toString(36).slice(-5),
     score: 0,
   };
   // Run server code for joining a lobby

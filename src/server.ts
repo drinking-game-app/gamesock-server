@@ -34,7 +34,17 @@ const sockServer = (app: Application, httpsOn: boolean) => {
   }
 
   // Initialize Socket IO server
-  io = socketIO(server);
+  io = socketIO(server, {
+    handlePreflightRequest: (req, res) => {
+      const headers = {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Allow-Origin": req.headers.origin,
+        "Access-Control-Allow-Credentials": true
+      };
+      res.writeHead(200, headers);
+      res.end();
+    }
+  });
   // Initialize the connection handler
   connectionHandler(io);
   return server;

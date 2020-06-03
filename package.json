@@ -1,6 +1,6 @@
 {
   "name": "@rossmacd/gamesock-server",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A Serverside Networking library to handle the websocket portion of games",
   "main": "dist/server.js",
   "types": "./dist/server.d.ts",
