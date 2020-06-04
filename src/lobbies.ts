@@ -199,7 +199,7 @@ export const connectionHandler = (thisIO: Server) => {
       if (players == null) {
         console.error('Error: 🤯 Please implement the onGetPlayers');
       } else {
-        console.log('Sending player list');
+        // console.log('Sending player list');
         io.to(lobbyName).emit('getPlayers', players);
       }
     });
@@ -220,7 +220,7 @@ export const connectionHandler = (thisIO: Server) => {
 
     socket.on('disconnecting', (reason) => {
       const lobbyName = Object.keys(socket.rooms).filter((item) => item !== socket.id)[0];
-      console.log('nameoaxd', lobbyName);
+      // console.log('nameoaxd', lobbyName);
       io.to(lobbyName).emit('message', {
         ok: true,
         msg: `${socket.id} has just left ${lobbyName} because of ${reason}`,
@@ -242,31 +242,31 @@ export const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
   // dont send next to hotseatplayers
   // let players = Object.keys(io.nsps['/'].adapter.rooms[lobbyName].sockets);
   let players: Player[] = onGetPlayersFn(lobbyName) as Player[];
-  console.log('AllPlayers', players);
+  // console.log('AllPlayers', players);
   players = players.filter((player: Player) => player.id !== roundOptions.hotseatPlayers[0].id && player.id !== roundOptions.hotseatPlayers[1].id);
-  console.log('newPlayers', players);
+  // console.log('newPlayers', players);
   let allQuestions: Question[] = [];
 
   for (const player of players) {
     const playerSocket = io.of('/').connected[player.id];
     const timeTillStart = roundOptions.timerStart - Date.now();
     const timeOut = (timeTillStart > 0 ? timeTillStart : 0) + ((roundOptions.time || 30) + 1) * 1000;
-    console.log('Timerout', timeOut);
+    // console.log('Timerout', timeOut);
     setTimeout(
       () =>
         playerSocket.emit('collectQuestions', (data: { ok: boolean; questions: string[] }) => {
-          console.log('collected for' + player.id, data.questions);
+          // console.log('collected for' + player.id, data.questions);
           // Delete any extra questions that might get passed in
           if (data.questions.length !== roundOptions.numQuestions) console.error('WRONG QUESTION AMOUNT', data.questions);
           // Push the questions into the array
           for (const newQuestion of data.questions) {
-            allQuestions.push({ playerId: player.id, question: newQuestion });
+            allQuestions.push({ playerId: player.id, question: newQuestion, answers:[] });
           }
           if (allQuestions.length >= roundOptions.numQuestions * players.length) {
             // Run a return question function
             console.log('done', allQuestions);
             allQuestions = onReturnQuestionsFn(lobbyName, allQuestions, roundOptions);
-            console.log('shuffled= ', allQuestions);
+            // console.log('shuffled= ', allQuestions);
             // startHotseat(lobbyName, shuffledQuestions,roundOptions,);
             const hotseatOptions = {
               // Time to answer
@@ -279,11 +279,12 @@ export const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
               question.tts = Date.now() + (hotseatOptions.tta + timeTillNextQuestion) * questionIndex * 1000 + delayTillStart;
               // start the timer
               setTimeout(() => {
-                console.log('starting'+questionIndex)
+                // console.log('starting'+questionIndex)
                 // Send answer to question
                 const answers = onRequestAnswerFn(lobbyName, questionIndex); // This should return the answers for the question-format:[0,0] or [1,null] for example
                 // Emit answers to all players
                 io.to(lobbyName).emit('hotseatResult', questionIndex, answers);
+                // io.to(lobbyName).emit('playerUpdated', playerObj);
                 // Emit round end signal when done
                 if (questionIndex === allQuestions.length - 1) {
                   // Tell server round has ended

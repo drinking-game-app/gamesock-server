@@ -8,7 +8,7 @@
     "test": "jest --detectOpenHandles --runInBand --coverage && make-coverage-badge",
     "build": "tsc -p declaration.tsconfig.json",
     "prepare": "npm run build",
-    "prepublishOnly": "npm test && npm run lint",
+    "prepublishOnly": "npm run lint",
     "preversion": "npm run lint",
     "lint": "tslint -p tsconfig.json",
     "docBuild": "typedoc --mode file --excludePrivate --excludeNotExported --out docs/ src/server.ts",
