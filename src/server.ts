@@ -4,13 +4,11 @@ import fs from 'fs';
 import { Server, Socket } from 'socket.io';
 import socketIO from 'socket.io';
 import { Application } from 'express';
-import { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame,startRound,onDisconnect,onReturnQuestions, onRequestAnswer, onRoundEnd, onAnswerQuestions } from './lobbies';
-import { Lobby, Player, RoundOptions,Question } from './lobbies';
+import { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame, startRound, onDisconnect, onReturnQuestions, onRequestAnswer, onRoundEnd, onAnswerQuestions } from './lobbies';
+import { Lobby, Player, RoundOptions, Question } from './lobbies';
 // @ts-ignore
 import timesyncServer from 'timesync/server';
 let io: Server;
-
-
 
 /**
  *  This Main constructor converts the instance of express into a HTTP server with all the websocket
@@ -20,14 +18,17 @@ let io: Server;
  *  @param {Application} app The instance of express
  *  @returns {https.Server} A http server
  */
-const sockServer = (app: Application, httpsOn: boolean) => {
+const sockServer = (app: Application, httpsOn: boolean,serverKeyPath:string ='server-key.pem',serverCertPath:string='server-cert.pem') => {
   app.use('/timesync', timesyncServer.requestHandler);
   let server;
   // Choosing https or not - untested
   if (httpsOn) {
+    if(serverCertPath==='server-key.pem'||serverCertPath==='server-cert.pem'){
+      console.warn('Paths for https certs & certificate have not changed')
+    }
     server = https.createServer({
-      key: fs.readFileSync('server-key.pem'),
-      cert: fs.readFileSync('server-cert.pem'),
+      key: fs.readFileSync(serverKeyPath),
+      cert: fs.readFileSync(serverCertPath),
     });
   } else {
     server = new http.Server(app);
@@ -37,13 +38,13 @@ const sockServer = (app: Application, httpsOn: boolean) => {
   io = socketIO(server, {
     handlePreflightRequest: (req, res) => {
       const headers = {
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "Access-Control-Allow-Origin": req.headers.origin,
-        "Access-Control-Allow-Credentials": true
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Origin': req.headers.origin,
+        'Access-Control-Allow-Credentials': true,
       };
       res.writeHead(200, headers);
       res.end();
-    }
+    },
   });
   // Initialize the connection handler
   connectionHandler(io);
@@ -62,6 +63,13 @@ const throwToRoom = (lobbyName: string, errorMessage: string) => {
   io.to(lobbyName).emit('gamesockError', errorMessage);
 };
 
+const kickAll = (lobbyName: string) => {
+  const players = Object.keys(io.nsps['/'].adapter.rooms[lobbyName].sockets);
+  for (const player of players) {
+    io.of('/').connected[player].disconnect();
+  }
+};
+
 export default {
   sockServer,
   close,
@@ -77,7 +85,8 @@ export default {
   onDisconnect,
   onRequestAnswer,
   onRoundEnd,
-  onAnswerQuestions
+  onAnswerQuestions,
+  kickAll,
 };
 
-export { sockServer, close, onAuth, onLobbyCreate, onLobbyJoin, onStartGame, startRound, onUpdateSinglePlayer, onGetPlayers, throwToRoom, Lobby, Player,Question, RoundOptions ,onReturnQuestions,onDisconnect,onRequestAnswer,onRoundEnd,onAnswerQuestions};
+export { sockServer, close, onAuth, onLobbyCreate, onLobbyJoin, onStartGame, startRound, onUpdateSinglePlayer, onGetPlayers, throwToRoom, Lobby, Player, Question, RoundOptions, onReturnQuestions, onDisconnect, onRequestAnswer, onRoundEnd, onAnswerQuestions, kickAll };

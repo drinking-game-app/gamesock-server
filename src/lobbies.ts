@@ -154,11 +154,11 @@ export const connectionHandler = (thisIO: Server) => {
   io = thisIO;
   // When a new client connects
   io.on('connection', (socket: Socket) => {
-    socket.on('joinLobby', (lobbyName: string, callback: CallbackFunction) => {
-      joinLobby(lobbyName, socket, io, callback);
+    socket.on('joinLobby', (lobbyName: string,username:string, callback: CallbackFunction) => {
+      joinLobby(lobbyName,username, socket, io, callback);
     });
 
-    socket.on('createLobby', (lobbyName: string, authToken: string, callback: CallbackFunction) => {
+    socket.on('createLobby', (lobbyName: string, username:string,authToken: string, callback: CallbackFunction) => {
       // The authorization function is overwritten by the users of the library
       // @HOOK
       if (authorizeFn(authToken)) {
@@ -171,7 +171,7 @@ export const connectionHandler = (thisIO: Server) => {
         // @HOOK
         if (onLobbyCreateFn(lobby)) {
           // Join the created Lobby
-          joinLobby(lobbyName, socket, io, callback);
+          joinLobby(lobbyName,username, socket, io, callback);
         } else {
           returnError(`Could not create lobby`, socket);
         }
@@ -310,11 +310,11 @@ export const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
  * @param {Socket} socket The socket which is joining
  * @param {Server} io The IO server
  */
-const joinLobby = (lobbyName: string, socket: Socket, serverio: Server, callback: CallbackFunction) => {
+const joinLobby = (lobbyName: string,username:string, socket: Socket, serverio: Server, callback: CallbackFunction) => {
   // Default player passed through to server
   const player: Player = {
     id: socket.id,
-    name: 'Guest'+(+new Date()).toString(36).slice(-5),
+    name: username || 'Guest'+(+new Date()).toString(36).slice(-5),
     score: 0,
   };
   // Run server code for joining a lobby
