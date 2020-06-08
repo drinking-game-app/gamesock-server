@@ -295,6 +295,8 @@ export const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
             }
             // Emit the start hotseat to sync players
             io.to(lobbyName).emit('startHotseat', allQuestions, hotseatOptions);
+           const updatedPlayers: Player[] = onGetPlayersFn(lobbyName) as Player[];
+            io.to(lobbyName).emit('getPlayers',updatedPlayers)
           }
         }),
       timeOut
