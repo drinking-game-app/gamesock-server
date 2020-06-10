@@ -240,6 +240,7 @@ export const connectionHandler = (thisIO: Server) => {
       });
       onDisconnectFn(lobbyName, socket.id);
     });
+
   });
 };
 
@@ -366,4 +367,4 @@ const returnError = (message: string, socket: Socket) => {
   });
 };
 
-export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame, onDisconnect, startRound, onReturnQuestions,onRoundEnd,onContinueGame};
+export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame, onDisconnect, startRound, onReturnQuestions,onRoundEnd,onContinueGame,};

@@ -69,7 +69,9 @@ const kickAll = (lobbyName: string) => {
     io.of('/').connected[player].disconnect();
   }
 };
-
+const updatePlayers = (lobbyName: string, players: Player[]) => {
+  io.to(lobbyName).emit('getPlayers', players);
+};
 export default {
   sockServer,
   close,
@@ -89,4 +91,4 @@ export default {
   kickAll,onContinueGame
 };
 
-export { sockServer, close, onAuth, onLobbyCreate, onLobbyJoin, onStartGame, startRound, onUpdateSinglePlayer, onGetPlayers, throwToRoom, Lobby, Player, Question, RoundOptions, onReturnQuestions, onDisconnect, onRequestAnswer, onRoundEnd, onAnswerQuestions, kickAll,onContinueGame };
+export { sockServer, close, onAuth, onLobbyCreate, onLobbyJoin, onStartGame, startRound, onUpdateSinglePlayer, onGetPlayers, throwToRoom, Lobby, Player, Question, RoundOptions, onReturnQuestions, onDisconnect, onRequestAnswer, onRoundEnd, onAnswerQuestions, kickAll,onContinueGame,updatePlayers };
