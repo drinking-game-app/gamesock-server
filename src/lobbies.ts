@@ -158,6 +158,10 @@ export const connectionHandler = (thisIO: Server) => {
       joinLobby(lobbyName,username, socket, io, callback);
     });
 
+    socket.on('pinger',(callback)=>{
+      callback('ponger')
+    })
+
     socket.on('createLobby', (lobbyName: string, username:string,authToken: string, callback: CallbackFunction) => {
       // The authorization function is overwritten by the users of the library
       // @HOOK
@@ -257,7 +261,16 @@ export const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
         playerSocket.emit('collectQuestions', (data: { ok: boolean; questions: string[] }) => {
           // console.log('collected for' + player.id, data.questions);
           // Delete any extra questions that might get passed in
-          if (data.questions.length !== roundOptions.numQuestions) console.error('WRONG QUESTION AMOUNT', data.questions);
+          if (data.questions.length !== roundOptions.numQuestions) {
+            console.error('WRONG QUESTION AMOUNT', data.questions);
+            if(data.questions.length<roundOptions.numQuestions){
+              for(let i =roundOptions.numQuestions-data.questions.length;i--;){
+                data.questions.push('Whos more likely to not fill out a question?')
+              }
+            }else{
+              data.questions.length=roundOptions.numQuestions
+            }
+          }
           // Push the questions into the array
           for (const newQuestion of data.questions) {
             allQuestions.push({ playerId: player.id, question: newQuestion, answers:[] });
