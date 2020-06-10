@@ -55,7 +55,7 @@ export type ReturnQuestionsFn = (lobbyName: string, questions: Question[], round
 export type AnswerQuestionFn = (lobbyName: string, socketId: string, questionNumber: number, answer: number) => void;
 export type RequestAnswerFn = (lobbyName: string, questionIndex: number) => number[];
 export type RoundEndFn = (lobbyName: string) =>void;
-// export type StartRoundFn = () => { roundOptions: RoundOptions };
+export type ContinueGameFn = (lobbyName:string,socketID:string) => void;
 
 /*
 ----- The over-writable functions
@@ -76,7 +76,7 @@ let onReturnQuestionsFn: ReturnQuestionsFn;
 let onAnswerQuestionFn: AnswerQuestionFn;
 let onRequestAnswerFn: RequestAnswerFn;
 let onRoundEndFn: RoundEndFn;
-
+let onContinueGameFn:ContinueGameFn;
 /**
  * Takes in a function to verify the authToken passed to the server. This function will run before a lobby is created
  * @param {AuthFn} authenticateFn The function which will verify the token that is passed to the server
@@ -117,6 +117,10 @@ export const onUpdateSinglePlayer = (updateSinglePlayerFunction: UpdateSinglePla
  */
 export const onGetPlayers = (getPlayersFunction: GetPlayersFn) => {
   onGetPlayersFn = getPlayersFunction;
+};
+
+export const onContinueGame = (newContinueGameFn: ContinueGameFn) => {
+  onContinueGameFn = newContinueGameFn;
 };
 
 /**
@@ -221,6 +225,11 @@ export const connectionHandler = (thisIO: Server) => {
     socket.on('hotseatAnswer', (lobbyName: string, questionNumber: number, answer: number) => {
       onAnswerQuestionFn(lobbyName, socket.id, questionNumber, answer);
     });
+
+    socket.on('continue',(lobbyName:string)=>{
+      onContinueGameFn(lobbyName,socket.id)
+    })
+
 
     socket.on('disconnecting', (reason) => {
       const lobbyName = Object.keys(socket.rooms).filter((item) => item !== socket.id)[0];
@@ -357,4 +366,4 @@ const returnError = (message: string, socket: Socket) => {
   });
 };
 
-export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame, onDisconnect, startRound, onReturnQuestions,onRoundEnd};
+export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame, onDisconnect, startRound, onReturnQuestions,onRoundEnd,onContinueGame};
