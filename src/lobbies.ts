@@ -32,6 +32,10 @@ export type RoundOptions = {
   time?: number;
   // // Time to start first timer: Date.now foramt
   timerStart?: number;
+  // Time to answer
+  tta:number
+  // Delay between questions
+  delayBetweenQs:number
 };
 
 export interface Question {
@@ -56,7 +60,7 @@ export type AnswerQuestionFn = (lobbyName: string, socketId: string, questionNum
 export type RequestAnswerFn = (lobbyName: string, questionIndex: number) => number[];
 export type RoundEndFn = (lobbyName: string) =>void;
 export type ContinueGameFn = (lobbyName:string,socketID:string) => void;
-
+export type NoAnswerFn = ()=>string;
 /*
 ----- The over-writable functions
 */
@@ -67,11 +71,12 @@ let onLobbyJoinFn: LobbyJoinFn = (lobbyName, player) => [];
 let onUpdateSinglePlayerFn: UpdateSinglePlayerFn = (lobbyName, player) => null;
 let onGetPlayersFn: GetPlayersFn = (lobbyName) => null;
 let onStartGameFn: StartGameFn = (lobbyName, socketId) => {
-  return { ok: true, gameSettings: { rounds: 10 } };
+  return { ok: true, gameSettings: { rounds: 3 } };
 };
 let onDisconnectFn: DisconnectFn = (lobbyName: string, socketId: string) => {
   //
 };
+let onNoAnswerFn:NoAnswerFn=()=>'Who\'s more likely not to answer a question'
 let onReturnQuestionsFn: ReturnQuestionsFn;
 let onAnswerQuestionFn: AnswerQuestionFn;
 let onRequestAnswerFn: RequestAnswerFn;
@@ -146,7 +151,9 @@ export const onRequestAnswer = (newRequestAnswerFn: RequestAnswerFn) => {
 export const onRoundEnd = (newRoundEndFn: RoundEndFn) => {
   onRoundEndFn = newRoundEndFn;
 };
-
+export const onNoAnswer = (newNoAnswerFn: NoAnswerFn) => {
+  onNoAnswerFn= newNoAnswerFn;
+};
 let io: Server;
 /**
  * @private
@@ -275,7 +282,7 @@ export const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
             console.error('WRONG QUESTION AMOUNT', data.questions);
             if(data.questions.length<roundOptions.numQuestions){
               for(let i =roundOptions.numQuestions-data.questions.length;i--;){
-                data.questions.push('Whos more likely to not fill out a question?')
+                data.questions.push(onNoAnswerFn())
               }
             }else{
               data.questions.length=roundOptions.numQuestions
@@ -293,13 +300,14 @@ export const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
             // startHotseat(lobbyName, shuffledQuestions,roundOptions,);
             const hotseatOptions = {
               // Time to answer
-              tta: 3,
+              tta: roundOptions.tta,
+              delayBetween:roundOptions.delayBetweenQs
             };
-            const timeTillNextQuestion = 3;
-            const delayTillStart = 4000;
+            // const timeTillNextQuestion = 3;
+            const delayTillStart = 5000;
             for (const [questionIndex, question] of allQuestions.entries()) {
               // Get the start time for each question
-              question.tts = Date.now() + (hotseatOptions.tta + timeTillNextQuestion) * questionIndex * 1000 + delayTillStart;
+              question.tts = Date.now() + (roundOptions.tta + roundOptions.delayBetweenQs) * questionIndex * 1000 + delayTillStart;
               // start the timer
               setTimeout(() => {
                 // console.log('starting'+questionIndex)
@@ -367,4 +375,4 @@ const returnError = (message: string, socket: Socket) => {
   });
 };
 
-export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame, onDisconnect, startRound, onReturnQuestions,onRoundEnd,onContinueGame,};
+export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame, onDisconnect, startRound, onReturnQuestions,onRoundEnd,onContinueGame,onNoAnswer};
