@@ -56,9 +56,9 @@ export type GetPlayersFn = (lobbyName: string) => Player[] | null;
 export type StartGameFn = (lobbyName: string, socketId: string) => { ok: boolean; gameSettings: GameSettings };
 export type DisconnectFn = (lobbyName: string, socketId: string) => void;
 export type ReturnQuestionsFn = (lobbyName: string, questions: Question[], roundOptions: RoundOptions) => Question[];
-export type AnswerQuestionFn = (lobbyName: string, socketId: string, questionNumber: number, answer: number) => void;
-export type RequestAnswerFn = (lobbyName: string, questionIndex: number) => number[];
-export type RoundEndFn = (lobbyName: string) =>void;
+export type AnswerQuestionFn = (lobbyName: string, socketId: string, questionNumber: number, answer: number,roundNum:number) => void;
+export type RequestAnswerFn = (lobbyName: string, questionIndex: number,roundNum:number) => number[];
+export type RoundEndFn = (lobbyName: string,roundNum:number) =>void;
 export type ContinueGameFn = (lobbyName:string,socketID:string) => void;
 export type NoAnswerFn = ()=>string;
 /*
@@ -229,8 +229,8 @@ export const connectionHandler = (thisIO: Server) => {
       }
     });
 
-    socket.on('hotseatAnswer', (lobbyName: string, questionNumber: number, answer: number) => {
-      onAnswerQuestionFn(lobbyName, socket.id, questionNumber, answer);
+    socket.on('hotseatAnswer', (lobbyName: string, questionNumber: number, answer: number, round:number) => {
+      onAnswerQuestionFn(lobbyName, socket.id, questionNumber, answer,round);
     });
 
     socket.on('continue',(lobbyName:string)=>{
@@ -312,14 +312,14 @@ export const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
               setTimeout(() => {
                 // console.log('starting'+questionIndex)
                 // Send answer to question
-                const answers = onRequestAnswerFn(lobbyName, questionIndex); // This should return the answers for the question-format:[0,0] or [1,null] for example
+                const answers = onRequestAnswerFn(lobbyName, questionIndex,roundOptions.roundNum); // This should return the answers for the question-format:[0,0] or [1,null] for example
                 // Emit answers to all players
                 io.to(lobbyName).emit('hotseatResult', questionIndex, answers);
                 // io.to(lobbyName).emit('playerUpdated', playerObj);
                 // Emit round end signal when done
                 if (questionIndex === allQuestions.length - 1) {
                   // Tell server round has ended
-                  onRoundEndFn(lobbyName)
+                  onRoundEndFn(lobbyName,roundOptions.roundNum)
                   io.to(lobbyName).emit('roundEnd');
                 }
               }, question.tts!-Date.now());
