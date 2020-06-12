@@ -11,7 +11,7 @@ export interface Lobby {
   // Host will always be players[0]
   players: Player[];
   questions?: Question[]
-  hotseatPairs?:[string,string][]
+  hotseatPairs?:[Player,Player][]
 }
 
 export interface Player {
