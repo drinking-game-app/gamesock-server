@@ -7,7 +7,7 @@ import { gameFunctions } from './game';
 export interface Lobby {
   readonly name: string;
   // If round is 0 game has not started
-  round: 0;
+  round: number;
   // Host will always be players[0]
   players: Player[];
   questions?: Question[]
@@ -44,6 +44,12 @@ export interface Question {
   // Time to Start
   tts?: number;
   answers?: number[];
+}
+
+export interface HotseatOptions{
+  // The time to answer each question
+  tta:number;
+  delayBetweenQs:number;
 }
 
 export type GameSettings = { rounds: number };
@@ -298,10 +304,10 @@ export const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
             allQuestions = onReturnQuestionsFn(lobbyName, allQuestions, roundOptions);
             // console.log('shuffled= ', allQuestions);
             // startHotseat(lobbyName, shuffledQuestions,roundOptions,);
-            const hotseatOptions = {
+            const hotseatOptions:HotseatOptions = {
               // Time to answer
               tta: roundOptions.tta,
-              delayBetween:roundOptions.delayBetweenQs
+              delayBetweenQs:roundOptions.delayBetweenQs
             };
             // const timeTillNextQuestion = 3;
             const delayTillStart = 5000;
