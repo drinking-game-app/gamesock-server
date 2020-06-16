@@ -4,21 +4,13 @@ import fs from 'fs';
 import { Server, Socket } from 'socket.io';
 import socketIO from 'socket.io';
 import { Application } from 'express';
-import { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame, startRound, onDisconnect, onReturnQuestions, onRequestAnswer, onRoundEnd, onAnswerQuestions,onContinueGame, onNoAnswer } from './lobbies';
+import { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame, startRound, onDisconnect, onReturnQuestions, onRequestAnswer, onRoundEnd, onAnswerQuestions,onContinueGame, onNoAnswer,startDebugMode } from './lobbies';
 import { Lobby, Player, RoundOptions, Question } from './lobbies';
 // @ts-ignore
 import timesyncServer from 'timesync/server';
 let io: Server;
 import {readFile} from 'fs';
-// const fs=require('fs');
-// const input = './package.json';
-// const output = './src/info.json'
-// fs.readFile(input, (err,data)=>{
-//     if(err){throw err}
-//     const npmPack = JSON.parse(data)
-//     const info=JSON.stringify({version:npmPack.version});
-//     fs.writeFileSync(output,info)
-// })
+
 /**
  *  This Main constructor converts the instance of express into a HTTP server with all the websocket
  *  functions, events and emitters
@@ -104,7 +96,9 @@ export default {
   onAnswerQuestions,
   kickAll,
   onContinueGame,
-  onNoAnswer
+  onNoAnswer,
+  startDebugMode
 };
 
-export { sockServer, close, onAuth, onLobbyCreate, onLobbyJoin, onStartGame, startRound, onUpdateSinglePlayer, onGetPlayers, throwToRoom, Lobby, Player, Question, RoundOptions, onReturnQuestions, onDisconnect, onRequestAnswer, onRoundEnd, onAnswerQuestions, kickAll,onContinueGame,updatePlayers,onNoAnswer };
+export { sockServer, close, onAuth, onLobbyCreate, onLobbyJoin, onStartGame, startRound, onUpdateSinglePlayer, onGetPlayers, throwToRoom, Lobby, Player, Question, RoundOptions, onReturnQuestions, onDisconnect, onRequestAnswer, onRoundEnd, onAnswerQuestions, kickAll,onContinueGame,updatePlayers,onNoAnswer,
+  startDebugMode };

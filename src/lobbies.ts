@@ -88,6 +88,10 @@ let onAnswerQuestionFn: AnswerQuestionFn;
 let onRequestAnswerFn: RequestAnswerFn;
 let onRoundEndFn: RoundEndFn;
 let onContinueGameFn:ContinueGameFn;
+
+let debugMode=false;
+export const startDebugMode = () => {debugMode=true}
+
 /**
  * Takes in a function to verify the authToken passed to the server. This function will run before a lobby is created
  * @param {AuthFn} authenticateFn The function which will verify the token that is passed to the server
@@ -332,6 +336,9 @@ export const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
                   }, roundOptions.delayBetweenQs)
                 }
               }, question.tts!-Date.now() + (hotseatOptions.tta*1000));
+              if(debugMode&& questionIndex===0)console.info('Seconds till first timer: ',
+                Math.floor(question.tts!-Date.now() + (hotseatOptions.tta*1000))
+              )
             }
             // Emit the start hotseat to sync players
             io.to(lobbyName).emit('startHotseat', allQuestions, hotseatOptions);
