@@ -311,9 +311,10 @@ export const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
             };
             // const timeTillNextQuestion = 3;
             const delayTillStart = 5000;
+            // let prevTimeToStart=0;
             for (const [questionIndex, question] of allQuestions.entries()) {
               // Get the start time for each question
-              question.tts = Date.now() + (roundOptions.tta + roundOptions.delayBetweenQs) * questionIndex * 1000 + delayTillStart;
+              question.tts = Date.now() + ((roundOptions.tta + roundOptions.delayBetweenQs) * (questionIndex) * 1000) + delayTillStart;
               // start the timer
               setTimeout(() => {
                 // console.log('starting'+questionIndex)
@@ -325,8 +326,10 @@ export const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
                 // Emit round end signal when done
                 if (questionIndex === allQuestions.length - 1) {
                   // Tell server round has ended
-                  onRoundEndFn(lobbyName,roundOptions.roundNum)
-                  io.to(lobbyName).emit('roundEnd');
+                  setTimeout(() => {
+                    onRoundEndFn(lobbyName,roundOptions.roundNum)
+                    io.to(lobbyName).emit('roundEnd');
+                  },roundOptions.delayBetweenQs)
                 }
               }, question.tts!-Date.now());
             }
