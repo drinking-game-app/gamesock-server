@@ -1,6 +1,6 @@
 {
   "name": "@rossmacd/gamesock-server",
-  "version": "0.1.24",
+  "version": "0.2.1",
   "description": "A Serverside Networking library to handle the websocket portion of games",
   "main": "dist/server.js",
   "types": "./dist/server.d.ts",
@@ -12,8 +12,7 @@
     "preversion": "npm run lint",
     "lint": "tslint -p tsconfig.json",
     "docBuild": "typedoc --mode file --excludePrivate --excludeNotExported --out docs/ src/server.ts",
-    "doc:html": "typedoc src/ --exclude **/*.test.ts --target ES6 --excludePrivate --excludeNotExported --mode file --out /docs",
-    "publish":" npm publish --access public"
+    "doc:html": "typedoc src/ --exclude **/*.test.ts --target ES6 --excludePrivate --excludeNotExported --mode file --out /docs"
   },
   "author": "Ross MacDonald & Ultan O Nuaillain",
   "license": "ISC",

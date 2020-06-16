@@ -9,7 +9,16 @@ import { Lobby, Player, RoundOptions, Question } from './lobbies';
 // @ts-ignore
 import timesyncServer from 'timesync/server';
 let io: Server;
-
+import {readFile} from 'fs';
+// const fs=require('fs');
+// const input = './package.json';
+// const output = './src/info.json'
+// fs.readFile(input, (err,data)=>{
+//     if(err){throw err}
+//     const npmPack = JSON.parse(data)
+//     const info=JSON.stringify({version:npmPack.version});
+//     fs.writeFileSync(output,info)
+// })
 /**
  *  This Main constructor converts the instance of express into a HTTP server with all the websocket
  *  functions, events and emitters
@@ -20,6 +29,11 @@ let io: Server;
  */
 const sockServer = (app: Application, httpsOn: boolean,serverKeyPath:string ='server-key.pem',serverCertPath:string='server-cert.pem') => {
   app.use('/timesync', timesyncServer.requestHandler);
+  readFile('../package.json', "utf8", (err,data)=>{
+        if(err){throw err}
+        const npmPack = JSON.parse(data)
+        console.log(`Gamesock Server: Version ${npmPack.version} initialized`)
+  })
   let server;
   // Choosing https or not - untested
   if (httpsOn) {
