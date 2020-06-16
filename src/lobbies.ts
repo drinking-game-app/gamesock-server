@@ -264,7 +264,7 @@ export const connectionHandler = (thisIO: Server) => {
  */
 export const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
   //  roundOptions.time=30
-  roundOptions.timerStart = Date.now() + 4 * 1000;
+  roundOptions.timerStart = Date.now() + (4 * 1000);
   io.to(lobbyName).emit('startRound', roundOptions);
   // dont send next to hotseatplayers
   // let players = Object.keys(io.nsps['/'].adapter.rooms[lobbyName].sockets);
@@ -329,9 +329,9 @@ export const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
                   setTimeout(() => {
                     onRoundEndFn(lobbyName,roundOptions.roundNum)
                     io.to(lobbyName).emit('roundEnd');
-                  },roundOptions.delayBetweenQs)
+                  }, roundOptions.delayBetweenQs)
                 }
-              }, question.tts!-Date.now());
+              }, question.tts!-Date.now() + (hotseatOptions.tta*1000));
             }
             // Emit the start hotseat to sync players
             io.to(lobbyName).emit('startHotseat', allQuestions, hotseatOptions);
