@@ -184,6 +184,9 @@ export const connectionHandler = (thisIO: Server) => {
     })
 
     socket.on('createLobby', (lobbyName: string, username:string,authToken: string, callback: CallbackFunction) => {
+      // if(typeof lobbyName === 'string')
+
+
       // The authorization function is overwritten by the users of the library
       // @HOOK
       if (authorizeFn(authToken)) {
@@ -392,3 +395,6 @@ const returnError = (message: string, socket: Socket) => {
 };
 
 export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame, onDisconnect, startRound, onReturnQuestions,onRoundEnd,onContinueGame,onNoAnswer};
+
+
+

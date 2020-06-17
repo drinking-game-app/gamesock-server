@@ -22,9 +22,12 @@ import {readFile} from 'fs';
 const sockServer = (app: Application, httpsOn: boolean,serverKeyPath:string ='server-key.pem',serverCertPath:string='server-cert.pem') => {
   app.use('/timesync', timesyncServer.requestHandler);
   readFile('../package.json', "utf8", (err,data)=>{
-        if(err){throw err}
-        const npmPack = JSON.parse(data)
-        console.log(`Gamesock Server: Version ${npmPack.version} initialized`)
+        if(err){
+          console.log("Gamesock-Client: Could not get version number")
+        }else{
+          const npmPack = JSON.parse(data)
+          console.log(`Gamesock Server: Version ${npmPack.version} initialized`)
+        }
   })
   let server;
   // Choosing https or not - untested
