@@ -90,7 +90,7 @@ let onAnswerQuestionFn: AnswerQuestionFn;
 let onRequestAnswerFn: RequestAnswerFn;
 let onRoundEndFn: RoundEndFn;
 let onContinueGameFn:ContinueGameFn;
-let onClaimSocketFn:ClaimSocketFn= (lobbyName,socketId,authcode)=>false;
+let onClaimSocketFn:ClaimSocketFn= (lobbyName,socketId)=>false;
 
 let debugMode=false;
 export const startDebugMode = () => {debugMode=true}
