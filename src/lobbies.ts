@@ -68,7 +68,7 @@ export type RequestAnswerFn = (lobbyName: string, questionIndex: number,roundNum
 export type RoundEndFn = (lobbyName: string,roundNum:number) =>void;
 export type ContinueGameFn = (lobbyName:string,socketID:string) => void;
 export type NoAnswerFn = ()=>string;
-export type ClaimSocketFn =(lobbyName:string,socketId:string)=>boolean;
+export type ClaimSocketFn =(lobbyName:string,socketId:string,ipAdress:string)=>boolean;
 /*
 ----- The over-writable functions
 */
@@ -90,7 +90,7 @@ let onAnswerQuestionFn: AnswerQuestionFn;
 let onRequestAnswerFn: RequestAnswerFn;
 let onRoundEndFn: RoundEndFn;
 let onContinueGameFn:ContinueGameFn;
-let onClaimSocketFn:ClaimSocketFn= (lobbyName,socketId)=>false;
+let onClaimSocketFn:ClaimSocketFn= (lobbyName,socketId,ipAddress)=>false;
 
 let debugMode=false;
 export const startDebugMode = () => {debugMode=true}
@@ -201,6 +201,7 @@ export const connectionHandler = (thisIO: Server) => {
           name: lobbyName,
           round: 0,
           players: [],
+          unclaimedIps:[]
         };
         // Run on lobby create function - Code for this is written on server
         // @HOOK
@@ -259,9 +260,9 @@ export const connectionHandler = (thisIO: Server) => {
 
     socket.on('claimSocket',(lobbyName: string, socketId: string)=>{
       const players = Object.keys(io.nsps['/'].adapter.rooms[lobbyName]?.sockets);
-      const ipAddess=socket.handshake.headers['x-forwarded-for'].split(",")[0];
+      const ipAddress=socket.handshake.headers['x-forwarded-for'].split(",")[0];
       if(!players.includes(socketId)){
-        if(!onClaimSocketFn(lobbyName,socketId,ipAddess)){
+        if(!onClaimSocketFn(lobbyName,socketId,ipAddress)){
           socket.emit('gamesockError', 'Could rejoin lobby')
         }
       }
@@ -269,7 +270,8 @@ export const connectionHandler = (thisIO: Server) => {
 
     socket.on('disconnecting', (reason) => {
       const lobbyName = Object.keys(socket.rooms).filter((item) => item !== socket.id)[0];
-      const ipAddress=socket.handshake.headers['x-forwarded-for'].split(",")[0]
+      const ipAddress=socket.request.connection._peername.address
+      console.log('DC IP = '+ipAddress)
       // console.log('nameoaxd', lobbyName);
       io.to(lobbyName).emit('message', {
         ok: true,

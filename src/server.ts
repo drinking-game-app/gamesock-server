@@ -100,7 +100,8 @@ export default {
   kickAll,
   onContinueGame,
   onNoAnswer,
-  startDebugMode
+  startDebugMode,
+  onClaimSocket
 };
 
 export { sockServer, close, onAuth, onLobbyCreate, onLobbyJoin, onStartGame, startRound, onUpdateSinglePlayer, onGetPlayers, throwToRoom, Lobby, Player, Question, RoundOptions, onReturnQuestions, onDisconnect, onRequestAnswer, onRoundEnd, onAnswerQuestions, kickAll,onContinueGame,updatePlayers,onNoAnswer,
