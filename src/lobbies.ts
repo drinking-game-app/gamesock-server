@@ -260,7 +260,7 @@ export const connectionHandler = (thisIO: Server) => {
 
     socket.on('claimSocket',(lobbyName: string, socketId: string)=>{
       const players = Object.keys(io.nsps['/'].adapter.rooms[lobbyName]?.sockets);
-      const ipAddress=socket.handshake.headers['x-forwarded-for'].split(",")[0];
+      const ipAddress=socket.request.connection._peername.address
       if(!players.includes(socketId)){
         if(!onClaimSocketFn(lobbyName,socketId,ipAddress)){
           socket.emit('gamesockError', 'Could rejoin lobby')
