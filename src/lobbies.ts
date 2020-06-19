@@ -67,6 +67,7 @@ export type RequestAnswerFn = (lobbyName: string, questionIndex: number,roundNum
 export type RoundEndFn = (lobbyName: string,roundNum:number) =>void;
 export type ContinueGameFn = (lobbyName:string,socketID:string) => void;
 export type NoAnswerFn = ()=>string;
+export type ClaimSocketFn =(lobbyName:string,socketId:string,authcode:string)=>boolean;
 /*
 ----- The over-writable functions
 */
@@ -88,6 +89,7 @@ let onAnswerQuestionFn: AnswerQuestionFn;
 let onRequestAnswerFn: RequestAnswerFn;
 let onRoundEndFn: RoundEndFn;
 let onContinueGameFn:ContinueGameFn;
+let onClaimSocketFn:ClaimSocketFn= (lobbyName,socketId,authcode)=>false;
 
 let debugMode=false;
 export const startDebugMode = () => {debugMode=true}
@@ -164,6 +166,10 @@ export const onRoundEnd = (newRoundEndFn: RoundEndFn) => {
 export const onNoAnswer = (newNoAnswerFn: NoAnswerFn) => {
   onNoAnswerFn= newNoAnswerFn;
 };
+export const onClaimSocket = (newClaimSocketFn: ClaimSocketFn) => {
+  onClaimSocketFn= newClaimSocketFn;
+};
+
 let io: Server;
 /**
  * @private
@@ -250,6 +256,14 @@ export const connectionHandler = (thisIO: Server) => {
       onContinueGameFn(lobbyName,socket.id)
     })
 
+    socket.on('claimSocket',(lobbyName: string, socketId: string, authcode:string)=>{
+      const players = Object.keys(io.nsps['/'].adapter.rooms[lobbyName]?.sockets);
+      if(!players.includes(socketId)){
+        if(!onClaimSocketFn(lobbyName,socketId,authcode)){
+          socket.emit('gamesockError', 'Could rejoin lobby')
+        }
+      }
+    })
 
     socket.on('disconnecting', (reason) => {
       const lobbyName = Object.keys(socket.rooms).filter((item) => item !== socket.id)[0];
@@ -295,7 +309,7 @@ export const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
             console.error('WRONG QUESTION AMOUNT', data.questions);
             if(data.questions.length<roundOptions.numQuestions){
               for(let i =roundOptions.numQuestions-data.questions.length;i--;){
-                data.questions.push(onNoAnswerFn())
+                allQuestions.push({ playerId: "", question: onNoAnswerFn(), answers:[] })
               }
             }else{
               data.questions.length=roundOptions.numQuestions
@@ -394,7 +408,7 @@ const returnError = (message: string, socket: Socket) => {
   });
 };
 
-export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame, onDisconnect, startRound, onReturnQuestions,onRoundEnd,onContinueGame,onNoAnswer};
+export default { connectionHandler, onAuth, onLobbyCreate, onLobbyJoin, onUpdateSinglePlayer, onGetPlayers, onStartGame, onDisconnect, startRound, onReturnQuestions,onRoundEnd,onContinueGame,onNoAnswer,onClaimSocket};
 
 
 
