@@ -12,6 +12,7 @@ export interface Lobby {
   players: Player[];
   questions?: Question[]
   hotseatPairs?:[Player,Player][]
+  unclaimedIps:string[]
 }
 
 export interface Player {
@@ -60,14 +61,14 @@ export type CallbackFunction = (data: any, error?: string) => void;
 export type UpdateSinglePlayerFn = (lobbyName: string, player: Player) => Player | null;
 export type GetPlayersFn = (lobbyName: string) => Player[] | null;
 export type StartGameFn = (lobbyName: string, socketId: string) => { ok: boolean; gameSettings: GameSettings };
-export type DisconnectFn = (lobbyName: string, socketId: string) => void;
+export type DisconnectFn = (lobbyName: string, socketId: string,ipAddress:string) => void;
 export type ReturnQuestionsFn = (lobbyName: string, questions: Question[], roundOptions: RoundOptions) => Question[];
 export type AnswerQuestionFn = (lobbyName: string, socketId: string, questionNumber: number, answer: number,roundNum:number) => void;
 export type RequestAnswerFn = (lobbyName: string, questionIndex: number,roundNum:number) => number[];
 export type RoundEndFn = (lobbyName: string,roundNum:number) =>void;
 export type ContinueGameFn = (lobbyName:string,socketID:string) => void;
 export type NoAnswerFn = ()=>string;
-export type ClaimSocketFn =(lobbyName:string,socketId:string,authcode:string)=>boolean;
+export type ClaimSocketFn =(lobbyName:string,socketId:string)=>boolean;
 /*
 ----- The over-writable functions
 */
@@ -80,7 +81,7 @@ let onGetPlayersFn: GetPlayersFn = (lobbyName) => null;
 let onStartGameFn: StartGameFn = (lobbyName, socketId) => {
   return { ok: true, gameSettings: { rounds: 3 } };
 };
-let onDisconnectFn: DisconnectFn = (lobbyName: string, socketId: string) => {
+let onDisconnectFn: DisconnectFn = (lobbyName, socketId, ipAddress) => {
   //
 };
 let onNoAnswerFn:NoAnswerFn=()=>'Who\'s more likely not to answer a question'
@@ -256,10 +257,11 @@ export const connectionHandler = (thisIO: Server) => {
       onContinueGameFn(lobbyName,socket.id)
     })
 
-    socket.on('claimSocket',(lobbyName: string, socketId: string, authcode:string)=>{
+    socket.on('claimSocket',(lobbyName: string, socketId: string)=>{
       const players = Object.keys(io.nsps['/'].adapter.rooms[lobbyName]?.sockets);
+      const ipAddess=socket.handshake.headers['x-forwarded-for'].split(",")[0];
       if(!players.includes(socketId)){
-        if(!onClaimSocketFn(lobbyName,socketId,authcode)){
+        if(!onClaimSocketFn(lobbyName,socketId,ipAddess)){
           socket.emit('gamesockError', 'Could rejoin lobby')
         }
       }
@@ -267,12 +269,13 @@ export const connectionHandler = (thisIO: Server) => {
 
     socket.on('disconnecting', (reason) => {
       const lobbyName = Object.keys(socket.rooms).filter((item) => item !== socket.id)[0];
+      const ipAddress=socket.handshake.headers['x-forwarded-for'].split(",")[0]
       // console.log('nameoaxd', lobbyName);
       io.to(lobbyName).emit('message', {
         ok: true,
         msg: `${socket.id} has just left ${lobbyName} because of ${reason}`,
       });
-      onDisconnectFn(lobbyName, socket.id);
+      onDisconnectFn(lobbyName, socket.id, ipAddress);
     });
 
   });
