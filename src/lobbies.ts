@@ -68,7 +68,7 @@ export type RequestAnswerFn = (lobbyName: string, questionIndex: number,roundNum
 export type RoundEndFn = (lobbyName: string,roundNum:number) =>void;
 export type ContinueGameFn = (lobbyName:string,socketID:string) => void;
 export type NoAnswerFn = ()=>string;
-export type ClaimSocketFn =(lobbyName:string,socketId:string,ipAdress:string)=>boolean;
+export type ClaimSocketFn =(lobbyName:string,socketId:string,ipAdress:string,newId:string)=>boolean;
 /*
 ----- The over-writable functions
 */
@@ -90,7 +90,7 @@ let onAnswerQuestionFn: AnswerQuestionFn;
 let onRequestAnswerFn: RequestAnswerFn;
 let onRoundEndFn: RoundEndFn;
 let onContinueGameFn:ContinueGameFn;
-let onClaimSocketFn:ClaimSocketFn= (lobbyName,socketId,ipAddress)=>false;
+let onClaimSocketFn:ClaimSocketFn= (lobbyName,socketId,ipAddress,newId)=>false;
 
 let debugMode=false;
 export const startDebugMode = () => {debugMode=true}
@@ -262,7 +262,7 @@ export const connectionHandler = (thisIO: Server) => {
       const players = Object.keys(io.nsps['/'].adapter.rooms[lobbyName]?.sockets);
       const ipAddress=socket.request.connection._peername.address
       if(!players.includes(socketId)){
-        if(!onClaimSocketFn(lobbyName,socketId,ipAddress)){
+        if(!onClaimSocketFn(lobbyName,socketId,ipAddress,socket.id)){
           socket.emit('gamesockError', 'Could rejoin lobby')
         }
       }
