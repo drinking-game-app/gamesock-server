@@ -11,6 +11,12 @@ import timesyncServer from 'timesync/server';
 let io: Server;
 import {readFile} from 'fs';
 
+
+export const startSyncServer = (app:Application) =>{
+  app.use('/timesync', timesyncServer.requestHandler);
+  return app
+}
+
 /**
  *  This Main constructor converts the instance of express into a HTTP server with all the websocket
  *  functions, events and emitters
@@ -19,8 +25,7 @@ import {readFile} from 'fs';
  *  @param {Application} app The instance of express
  *  @returns {https.Server} A http server
  */
-const sockServer = (app: Application, httpsOn: boolean,serverKeyPath:string ='server-key.pem',serverCertPath:string='server-cert.pem') => {
-  app.use('/timesync', timesyncServer.requestHandler);
+const sockServer = (server: http.Server|https.Server) => {
   readFile('./node_modules/@rossmacd/gamesock-server/package.json', "utf8", (err,data)=>{
         if(err){
           console.log("Gamesock-Client: Could not get version number")
@@ -29,19 +34,6 @@ const sockServer = (app: Application, httpsOn: boolean,serverKeyPath:string ='se
           console.log(`Gamesock Server: Version ${npmPack.version} initialized`)
         }
   })
-  let server;
-  // Choosing https or not - untested
-  if (httpsOn) {
-    if(serverCertPath==='server-key.pem'||serverCertPath==='server-cert.pem'){
-      console.warn('Paths for https certs & certificate have not changed')
-    }
-    server = https.createServer({
-      key: fs.readFileSync(serverKeyPath),
-      cert: fs.readFileSync(serverCertPath),
-    });
-  } else {
-    server = new http.Server(app);
-  }
 
   // Initialize Socket IO server
   io = socketIO(server, {
@@ -101,7 +93,8 @@ export default {
   onContinueGame,
   onNoAnswer,
   startDebugMode,
-  onClaimSocket
+  onClaimSocket,
+  startSyncServer
 };
 
 export { sockServer, close, onAuth, onLobbyCreate, onLobbyJoin, onStartGame, startRound, onUpdateSinglePlayer, onGetPlayers, throwToRoom, Lobby, Player, Question, RoundOptions, onReturnQuestions, onDisconnect, onRequestAnswer, onRoundEnd, onAnswerQuestions, kickAll,onContinueGame,updatePlayers,onNoAnswer,
