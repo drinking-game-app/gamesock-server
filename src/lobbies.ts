@@ -272,6 +272,8 @@ export const connectionHandler = (thisIO: Server) => {
         }
       }
         socket.disconnect()
+        const updatedPlayers: Player[] = onGetPlayersFn(lobbyName) as Player[];
+        io.to(lobbyName).emit('getPlayers',updatedPlayers)
     })
 
     socket.on('disconnecting', (reason) => {
