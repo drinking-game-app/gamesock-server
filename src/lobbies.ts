@@ -265,10 +265,13 @@ export const connectionHandler = (thisIO: Server) => {
         const ipAddress=socket.request.connection._peername.address
         if(!players.includes(socketId)){
           if(!onClaimSocketFn(lobbyName,socketId,ipAddress,socket.id)){
-            socket.emit('gamesockError', 'Could rejoin lobby')
+            socket.emit('gamesockError', 'Couldnt rejoin lobby')
+          }else{
+            return;
           }
         }
       }
+        socket.disconnect()
     })
 
     socket.on('disconnecting', (reason) => {
