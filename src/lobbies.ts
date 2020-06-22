@@ -259,11 +259,14 @@ export const connectionHandler = (thisIO: Server) => {
     })
 
     socket.on('claimSocket',(lobbyName: string, socketId: string)=>{
-      const players = Object.keys(io.nsps['/'].adapter.rooms[lobbyName]?.sockets);
-      const ipAddress=socket.request.connection._peername.address
-      if(!players.includes(socketId)){
-        if(!onClaimSocketFn(lobbyName,socketId,ipAddress,socket.id)){
-          socket.emit('gamesockError', 'Could rejoin lobby')
+      const socketList=io.nsps['/'].adapter.rooms[lobbyName]?.sockets
+      if(socketList){
+        const players = Object.keys(socketList);
+        const ipAddress=socket.request.connection._peername.address
+        if(!players.includes(socketId)){
+          if(!onClaimSocketFn(lobbyName,socketId,ipAddress,socket.id)){
+            socket.emit('gamesockError', 'Could rejoin lobby')
+          }
         }
       }
     })
