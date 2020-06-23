@@ -12,7 +12,7 @@ export interface Lobby {
   players: Player[];
   questions?: Question[]
   hotseatPairs?:[Player,Player][]
-  unclaimedIps:Map<string, string>[]
+  unclaimedIps:Map<string, string>
 }
 
 export interface Player {
@@ -201,7 +201,7 @@ export const connectionHandler = (thisIO: Server) => {
           name: lobbyName,
           round: 0,
           players: [],
-          unclaimedIps:[]
+          unclaimedIps:new Map<string,string>()
         };
         // Run on lobby create function - Code for this is written on server
         // @HOOK
@@ -264,6 +264,7 @@ export const connectionHandler = (thisIO: Server) => {
         const players = Object.keys(socketList);
         const ipAddress=socket.request.connection._peername.address
         if(!players.includes(socketId) && onClaimSocketFn(lobbyName,socketId,ipAddress,socket.id)){
+          socket.join(lobbyName);
         const updatedPlayers: Player[] = onGetPlayersFn(lobbyName) as Player[];
           callback({
             ok:true,
