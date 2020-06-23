@@ -12,7 +12,7 @@ export interface Lobby {
   players: Player[];
   questions?: Question[]
   hotseatPairs?:[Player,Player][]
-  unclaimedIps:string[]
+  unclaimedIps:Map<string, string>[]
 }
 
 export interface Player {
@@ -258,22 +258,24 @@ export const connectionHandler = (thisIO: Server) => {
       onContinueGameFn(lobbyName,socket.id)
     })
 
-    socket.on('claimSocket',(lobbyName: string, socketId: string)=>{
+    socket.on('claimSocket',(lobbyName: string, socketId: string,callback:CallbackFunction)=>{
       const socketList=io.nsps['/'].adapter.rooms[lobbyName]?.sockets
       if(socketList){
         const players = Object.keys(socketList);
         const ipAddress=socket.request.connection._peername.address
-        if(!players.includes(socketId)){
-          if(!onClaimSocketFn(lobbyName,socketId,ipAddress,socket.id)){
-            socket.emit('gamesockError', 'Couldnt rejoin lobby')
-          }else{
-            return;
-          }
+        if(!players.includes(socketId) && onClaimSocketFn(lobbyName,socketId,ipAddress,socket.id)){
+        const updatedPlayers: Player[] = onGetPlayersFn(lobbyName) as Player[];
+          callback({
+            ok:true,
+            players:updatedPlayers
+          })
+          return;
         }
       }
-        socket.disconnect()
-        const updatedPlayers: Player[] = onGetPlayersFn(lobbyName) as Player[];
-        io.to(lobbyName).emit('getPlayers',updatedPlayers)
+      callback({ok:false})
+        socket.disconnect(true)
+        // const updatedPlayers: Player[] = onGetPlayersFn(lobbyName) as Player[];
+        // io.to(lobbyName).emit('getPlayers',updatedPlayers)
     })
 
     socket.on('disconnecting', (reason) => {
