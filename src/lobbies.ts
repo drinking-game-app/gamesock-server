@@ -321,68 +321,24 @@ export const startRound = (lobbyName: string, roundOptions: RoundOptions) => {
     // console.log('Timerout', timeOut);
     setTimeout(
       () =>{
+        let callbackCheck = false;
         if(!playerSocket){
           collectQuestions({ok:true,questions:[]},player)
         }else{
         playerSocket.emit('collectQuestions', (data: { ok: boolean; questions: string[] }) => {
+          if(!callbackCheck){
           collectQuestions(data,player);
-          // Delete any extra questions that might get passed in
-          // if (data.questions.length !== roundOptions.numQuestions) {
-          //   console.error('WRONG QUESTION AMOUNT', data.questions);
-          //   if (data.questions.length < roundOptions.numQuestions) {
-          //     for (let i = roundOptions.numQuestions - data.questions.length; i--; ) {
-          //       allQuestions.push({ playerId: '', question: onNoAnswerFn(), answers: [] });
-          //     }
-          //   } else {
-          //     data.questions.length = roundOptions.numQuestions;
-          //   }
-          // }
-          // // Push the questions into the array
-          // for (const newQuestion of data.questions) {
-          //   allQuestions.push({ playerId: player.id, question: newQuestion, answers: [] });
-          // }
-          // if (allQuestions.length >= roundOptions.numQuestions * players.length) {
-          //   // Run a return question function
-          //   console.log('done', allQuestions);
-          //   allQuestions = onReturnQuestionsFn(lobbyName, allQuestions, roundOptions);
-          //   // console.log('shuffled= ', allQuestions);
-          //   // startHotseat(lobbyName, shuffledQuestions,roundOptions,);
-          //   const hotseatOptions: HotseatOptions = {
-          //     // Time to answer
-          //     tta: roundOptions.tta,
-          //     delayBetweenQs: roundOptions.delayBetweenQs,
-          //   };
-          //   // const timeTillNextQuestion = 3;
-          //   const delayTillStart = 5000;
-          //   // let prevTimeToStart=0;
-          //   for (const [questionIndex, question] of allQuestions.entries()) {
-          //     // Get the start time for each question
-          //     question.tts = Date.now() + (roundOptions.tta + roundOptions.delayBetweenQs) * questionIndex * 1000 + delayTillStart;
-          //     // start the timer
-          //     setTimeout(() => {
-          //       // console.log('starting'+questionIndex)
-          //       // Send answer to question
-          //       const answers = onRequestAnswerFn(lobbyName, questionIndex, roundOptions.roundNum); // This should return the answers for the question-format:[0,0] or [1,null] for example
-          //       // Emit answers to all players
-          //       io.to(lobbyName).emit('hotseatResult', questionIndex, answers);
-          //       // io.to(lobbyName).emit('playerUpdated', playerObj);
-          //       // Emit round end signal when done
-          //       if (questionIndex === allQuestions.length - 1) {
-          //         // Tell server round has ended
-          //         setTimeout(() => {
-          //           onRoundEndFn(lobbyName, roundOptions.roundNum);
-          //           io.to(lobbyName).emit('roundEnd');
-          //         }, roundOptions.delayBetweenQs);
-          //       }
-          //     }, question.tts! - Date.now() + hotseatOptions.tta * 1000);
-          //     if (debugMode && questionIndex === 0) console.info('Seconds till first timer: ', Math.floor(question.tts! - Date.now() + hotseatOptions.tta * 1000));
-          //   }
-          //   // Emit the start hotseat to sync players
-          //   io.to(lobbyName).emit('startHotseat', allQuestions, hotseatOptions);
-          //   const updatedPlayers: Player[] = onGetPlayersFn(lobbyName) as Player[];
-          //   io.to(lobbyName).emit('getPlayers', updatedPlayers);
-          // }
+        }
+          callbackCheck=true
         })}
+        setTimeout(
+          ()=>{
+            if(!callbackCheck){
+              collectQuestions({ok:true,questions:[]},player);
+              callbackCheck=true
+            }
+          },6000
+        )
       },
       timeOut
     );
